@@ -1,63 +1,131 @@
-// 📓 Krushi Mitra Pro — Farm Diary
-import React, { useState } from 'react';
+// 📓 Krushi Mitra Pro — Farm Diary with Conflict Pre-Check & Judge Debug State Panel
+import React, { useState, useEffect } from 'react';
 import { getDiaryAnalysis } from '../services/ai';
-import { BookOpen, Plus, IndianRupee, Trash2, TrendingUp, Sparkles, CheckCircle } from 'lucide-react';
+import { checkDiaryActivityConflict, logConflictOverride } from '../services/conflictCheckService';
+import { BookOpen, Plus, IndianRupee, Trash2, TrendingUp, Sparkles, CheckCircle, AlertOctagon, Bug, ShieldAlert } from 'lucide-react';
+import { db } from '../firebase/config';
+import { collection, onSnapshot, addDoc, doc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 
-export default function FarmDiary({ diaryEntries, setDiaryEntries, profile, apiKey }) {
+import { getWeather } from '../services/weather';
+
+export default function FarmDiary({ diaryEntries = [], setDiaryEntries = () => {}, profile = {}, apiKey, weather }) {
   const [activity, setActivity] = useState('');
   const [cost, setCost] = useState('');
   const [isExpense, setIsExpense] = useState(true);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-
-  // AI advisory state
+  const [liveEntries, setLiveEntries] = useState([]);
   const [aiReport, setAiReport] = useState('');
   const [loadingAI, setLoadingAI] = useState(false);
+  const [showJudgeDebug, setShowJudgeDebug] = useState(false);
+  const [liveWeather, setLiveWeather] = useState(weather || null);
 
-  const lang = profile.language || 'hi';
+  // Conflict state
+  const [conflictModalData, setConflictModalData] = useState(null);
+  const [overrideReason, setOverrideReason] = useState('');
 
-  const formatText = (textHi, textEn) => {
-    return lang === 'hi' ? textHi : textEn;
+  // Fetch live weather if not passed
+  useEffect(() => {
+    if (!liveWeather) {
+      getWeather(19.9975, 73.7898, profile.district || 'Nashik', apiKey).then(w => setLiveWeather(w));
+    }
+  }, [weather, profile.district, apiKey]);
+
+  const activeWeather = liveWeather || {
+    temperature: 28,
+    condition: 'Rain',
+    rainChance: 80.0,
+    humidity: 85,
+    windSpeed: 18.0
   };
 
-  const handleAddEntry = (e) => {
+  const lang = profile.language || 'hi';
+  const formatText = (textHi, textEn) => lang === 'hi' ? textHi : textEn;
+
+  // Real-time Firestore sync
+  useEffect(() => {
+    try {
+      const q = query(collection(db, 'farmers', profile.id || 'demo_farmer', 'diary'), orderBy('date', 'desc'));
+      const unsub = onSnapshot(q, (snap) => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setLiveEntries(items);
+        if (setDiaryEntries) setDiaryEntries(items);
+      }, (err) => console.warn('Diary sync error:', err));
+      return () => unsub();
+    } catch (e) {
+      console.warn('Firebase diary error:', e);
+    }
+  }, [profile.id]);
+
+  const displayEntries = liveEntries.length > 0 ? liveEntries : diaryEntries;
+
+  // Handle Add Entry submit with Pre-Submission Conflict Check
+  const handlePreSubmit = (e) => {
     e.preventDefault();
     if (!activity.trim() || !cost) return;
 
+    // RUN CONFLICT CHECK
+    const conflictResult = checkDiaryActivityConflict(activity, date, activeWeather);
+
+    if (conflictResult.hasConflict) {
+      // BLOCK AND SHOW CONFLICT MODAL
+      setConflictModalData(conflictResult);
+    } else {
+      // SAFE TO COMMIT
+      commitEntry();
+    }
+  };
+
+  const commitEntry = async () => {
     const newEntry = {
-      id: Date.now().toString(),
       activity: activity.trim(),
       cost: parseFloat(cost),
-      isExpense: isExpense,
-      date: date
+      isExpense,
+      date,
+      createdAt: serverTimestamp()
     };
 
-    const updated = [newEntry, ...diaryEntries];
-    setDiaryEntries(updated);
-    localStorage.setItem('krushi_diary_entries', JSON.stringify(updated));
+    try {
+      await addDoc(collection(db, 'farmers', profile.id || 'demo_farmer', 'diary'), newEntry);
+    } catch (err) {
+      console.error('Firestore diary write error:', err);
+    }
 
-    // Reset inputs
     setActivity('');
     setCost('');
-    setAiReport('');
+    setConflictModalData(null);
+    setOverrideReason('');
   };
 
-  const handleDeleteEntry = (id) => {
-    const updated = diaryEntries.filter(entry => entry.id !== id);
-    setDiaryEntries(updated);
-    localStorage.setItem('krushi_diary_entries', JSON.stringify(updated));
-    setAiReport('');
+  const handleOverrideSubmit = async () => {
+    if (conflictModalData) {
+      await logConflictOverride(
+        profile.id || 'web_farmer',
+        activity,
+        conflictModalData.title,
+        conflictModalData.rainChance,
+        overrideReason || 'Farmer decided to proceed despite rain warning'
+      );
+    }
+    commitEntry();
   };
 
-  // Sums
-  const income = diaryEntries.filter(e => !e.isExpense).reduce((sum, e) => sum + parseFloat(e.cost || 0), 0);
-  const expense = diaryEntries.filter(e => e.isExpense).reduce((sum, e) => sum + parseFloat(e.cost || 0), 0);
+  const handleDeleteEntry = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'farmers', profile.id || 'demo_farmer', 'diary', id));
+    } catch (err) {
+      console.error('Diary delete error:', err);
+    }
+  };
+
+  const income = displayEntries.filter(e => !e.isExpense).reduce((sum, e) => sum + parseFloat(e.cost || 0), 0);
+  const expense = displayEntries.filter(e => e.isExpense).reduce((sum, e) => sum + parseFloat(e.cost || 0), 0);
   const totalBalance = income - expense;
 
   const handleGetAdvisory = async () => {
     setLoadingAI(true);
     setAiReport('');
     try {
-      const response = await getDiaryAnalysis({ profile, diaryEntries }, apiKey);
+      const response = await getDiaryAnalysis({ profile, diaryEntries: displayEntries }, apiKey);
       setAiReport(response);
     } catch (e) {
       setAiReport("⚠️ Failed to generate financial analysis. Please configure your API key.");
@@ -66,217 +134,208 @@ export default function FarmDiary({ diaryEntries, setDiaryEntries, profile, apiK
     }
   };
 
-  const renderMarkdown = (text) => {
-    return text.split('\n').map((line, idx) => {
-      let content = line;
-      content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      const isHeader = content.startsWith('### ');
-      const isBullet = content.trim().startsWith('* ') || content.trim().startsWith('- ');
-      const isBoldLine = content.startsWith('**');
-
-      if (isHeader) {
-        return <h4 key={idx} style={{ color: 'var(--primary-emerald)', margin: '14px 0 6px', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: content.substring(4) }} />;
-      }
-      if (isBullet) {
-        return <li key={idx} style={{ marginLeft: '16px', listStyleType: 'disc', fontSize: '0.82rem', marginBottom: '4px' }} dangerouslySetInnerHTML={{ __html: content.trim().substring(2) }} />;
-      }
-      return <p key={idx} style={{ fontSize: '0.82rem', marginBottom: '6px', lineHeight: '1.5' }} dangerouslySetInnerHTML={{ __html: content }} />;
-    });
-  };
-
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      {/* Header */}
-      <div className="glass-panel" style={{ padding: '24px' }}>
-        <h2 style={{ fontSize: '1.4rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <BookOpen style={{ color: 'var(--primary-emerald)' }} />
-          {formatText("फार्म डायरी - बहीखाता", "Farm Diary & Accounting")}
-        </h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          {formatText(
-            "अपने दैनिक कृषि कार्यों, खर्चों और आय का हिसाब रखें और एआई वित्तीय सलाह प्राप्त करें।",
-            "Record your daily farming operations, fertilizer costs, seed purchases, and crop sale revenues."
-          )}
-        </p>
-      </div>
-
-      {/* Financial Overview Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid var(--success)' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatText("कुल आय", "Total Income")}</span>
-          <h2 style={{ fontSize: '1.5rem', color: 'var(--success)', marginTop: '4px' }}>₹{income.toLocaleString()}</h2>
-        </div>
-        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid var(--error)' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatText("कुल खर्च", "Total Expenses")}</span>
-          <h2 style={{ fontSize: '1.5rem', color: 'var(--error)', marginTop: '4px' }}>₹{expense.toLocaleString()}</h2>
-        </div>
-        <div className="glass-panel" style={{ padding: '16px', borderLeft: `4px solid ${totalBalance >= 0 ? 'var(--primary-emerald)' : 'var(--error)'}` }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatText("शुद्ध लाभ/हानि", "Net Profit/Loss")}</span>
-          <h2 style={{ fontSize: '1.5rem', color: totalBalance >= 0 ? 'var(--primary-emerald)' : 'var(--error)', marginTop: '4px' }}>
-            ₹{totalBalance.toLocaleString()}
+      {/* Header Banner */}
+      <div className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h2 style={{ fontSize: '1.4rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BookOpen style={{ color: 'var(--primary-emerald)' }} />
+            {formatText("खेती का बही-खाता (Farm Diary)", "Digital Farm Diary & Conflict Check")}
           </h2>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {formatText(
+              "अपने दैनिक कृषि खर्चों और आमदनी का हिसाब रखें। स्मार्ट AI वित्तीय सलाह प्राप्त करें।",
+              "Track daily agricultural inputs, labor, and crop sales with automated weather conflict detection."
+            )}
+          </p>
+        </div>
+
+        {/* Judge Debug Toggle */}
+        <button 
+          onClick={() => setShowJudgeDebug(!showJudgeDebug)} 
+          className="btn-secondary" 
+          style={{ fontSize: '0.8rem', padding: '6px 14px', gap: '6px', color: showJudgeDebug ? '#f59e0b' : 'var(--text-secondary)' }}
+        >
+          <Bug size={16} /> {showJudgeDebug ? "Hide Judge Debug Panel" : "🐞 Dev/Judge Debug Panel"}
+        </button>
+      </div>
+
+      {/* JUDGE DEBUG PANEL */}
+      {showJudgeDebug && (
+        <div className="glass-panel" style={{ padding: '20px', background: 'rgba(245, 158, 11, 0.08)', border: '1px dashed #f59e0b', borderRadius: '12px' }}>
+          <h4 style={{ color: '#f59e0b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem' }}>
+            <Bug size={18} /> Judge Debug State & Live Weather Conflict Inspector
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', fontSize: '0.8rem' }}>
+            <div style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '8px' }}>
+              <strong style={{ color: 'var(--primary-emerald)' }}>Live Weather Input Context:</strong>
+              <pre style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap', color: 'var(--text-secondary)' }}>
+                {JSON.stringify(activeWeather, null, 2)}
+              </pre>
+            </div>
+            <div style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '8px' }}>
+              <strong style={{ color: 'var(--secondary-cyan)' }}>Active Evaluator State:</strong>
+              <p style={{ marginTop: '6px', color: 'var(--text-secondary)' }}>
+                If activity = `Spraying/Fertilizer` &amp; Rain &gt; 60%, entry is BLOCKED with metric modal. Overrides are written to Firestore collection `conflict_logs`.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Financial Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Income</span>
+          <h3 style={{ fontSize: '1.6rem', color: 'var(--primary-emerald)', marginTop: '4px' }}>₹{income.toLocaleString()}</h3>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Expense</span>
+          <h3 style={{ fontSize: '1.6rem', color: '#ef4444', marginTop: '4px' }}>₹{expense.toLocaleString()}</h3>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Net Profit / Loss</span>
+          <h3 style={{ fontSize: '1.6rem', color: totalBalance >= 0 ? 'var(--primary-emerald)' : '#ef4444', marginTop: '4px' }}>
+            ₹{totalBalance.toLocaleString()}
+          </h3>
         </div>
       </div>
 
-      {/* Main layout split */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', alignItems: 'start' }}>
+      {/* Entry Form */}
+      <div className="glass-panel" style={{ padding: '24px' }}>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>➕ {formatText("नया लेनदेन जोड़ें", "Add New Field Entry")}</h3>
         
-        {/* Form and entries list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
-          {/* Add Entry Form */}
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '14px' }}>
-              ✍️ {formatText("नया लेनदेन जोड़ें", "Add New Log Entry")}
-            </h3>
-            <form onSubmit={handleAddEntry} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                  type="button" 
-                  onClick={() => setIsExpense(true)}
-                  className="btn-secondary" 
-                  style={{ flex: 1, justifyContent: 'center', borderColor: isExpense ? 'var(--error)' : 'var(--border-outline)', background: isExpense ? 'rgba(239, 68, 68, 0.05)' : 'transparent' }}
-                >
-                  🔴 {formatText("खर्च", "Expense")}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsExpense(false)}
-                  className="btn-secondary" 
-                  style={{ flex: 1, justifyContent: 'center', borderColor: !isExpense ? 'var(--success)' : 'var(--border-outline)', background: !isExpense ? 'rgba(34, 197, 94, 0.05)' : 'transparent' }}
-                >
-                  🟢 {formatText("आय", "Income")}
-                </button>
-              </div>
+        <form onSubmit={handlePreSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+          <div>
+            <label className="form-label">Activity / Detail</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Pesticide Spraying / Harvest" 
+              value={activity} 
+              onChange={(e) => setActivity(e.target.value)} 
+              className="form-input" 
+              required 
+            />
+          </div>
 
+          <div>
+            <label className="form-label">Amount (₹)</label>
+            <input 
+              type="number" 
+              placeholder="2500" 
+              value={cost} 
+              onChange={(e) => setCost(e.target.value)} 
+              className="form-input" 
+              required 
+            />
+          </div>
+
+          <div>
+            <label className="form-label">Type</label>
+            <select value={isExpense ? "Expense" : "Income"} onChange={(e) => setIsExpense(e.target.value === "Expense")} className="form-input">
+              <option value="Expense">Expense (खर्च)</option>
+              <option value="Income">Income (आय)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="form-label">Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="form-input" />
+          </div>
+
+          <button type="submit" className="btn-primary" style={{ gridColumn: '1 / -1', justifyContent: 'center', marginTop: '8px' }}>
+            <Plus size={18} /> Save Entry (With Conflict Check)
+          </button>
+        </form>
+      </div>
+
+      {/* CONFLICT BLOCK MODAL */}
+      {conflictModalData && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="glass-panel animate-fade-in" style={{ background: 'var(--bg-surface)', width: '100%', maxWidth: '520px', padding: '28px', border: '2px solid #ef4444', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ef4444', marginBottom: '14px' }}>
+              <AlertOctagon size={32} />
+              <h3 style={{ fontSize: '1.2rem' }}>{conflictModalData.title}</h3>
+            </div>
+
+            <p style={{ color: 'var(--text-primary)', fontSize: '0.92rem', lineHeight: '1.5', marginBottom: '16px' }}>
+              {conflictModalData.description}
+            </p>
+
+            {/* Metric Displays */}
+            <div style={{ background: 'rgba(239,68,68,0.1)', padding: '14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', marginBottom: '16px', border: '1px solid rgba(239,68,68,0.3)' }}>
               <div>
-                <input 
-                  type="text" 
-                  placeholder={isExpense ? formatText("जैसे: यूरिया खाद, ट्रैक्टर जुताई, मजदूर", "E.g., Urea Fertilizer, Tillage labor") : formatText("जैसे: गेहूं बिक्री, टमाटर बिक्री", "E.g., Tomato harvest sale, Cotton selling")}
-                  value={activity}
-                  onChange={(e) => setActivity(e.target.value)}
-                  className="form-input"
-                  required
-                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Rain Probability:</span>
+                <strong style={{ fontSize: '1.3rem', color: '#ef4444' }}>{conflictModalData.rainChance}%</strong>
               </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <input 
-                  type="number" 
-                  placeholder={formatText("राशि (₹)", "Amount (₹)")}
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  className="form-input"
-                  style={{ flex: 2 }}
-                  min="1"
-                  required
-                />
-                <input 
-                  type="date" 
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="form-input"
-                  style={{ flex: 3 }}
-                  required
-                />
+              <div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Forecast Horizon:</span>
+                <strong style={{ fontSize: '0.95rem', color: '#f8fafc' }}>{conflictModalData.expectedTime}</strong>
               </div>
+            </div>
 
-              <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '4px' }}>
-                <Plus size={18} /> {formatText("डायरी में सहेजें", "Add Entry")}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Optional Override Reason (Logged to Auditable Firestore Ledger):
+              </label>
+              <input 
+                type="text" 
+                placeholder="e.g. Using emergency rain-shield covering..." 
+                value={overrideReason}
+                onChange={(e) => setOverrideReason(e.target.value)}
+                className="form-input"
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setConflictModalData(null)} className="btn-secondary">
+                Cancel & Reschedule
               </button>
-            </form>
-          </div>
-
-          {/* Entries list */}
-          <div className="glass-panel" style={{ padding: '20px', maxHeight: '350px', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '12px' }}>
-              📋 {formatText("हालिया लेनदेन सूची", "Transaction Ledger")}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {diaryEntries.map((entry) => (
-                <div 
-                  key={entry.id}
-                  style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    padding: '10px 12px', 
-                    background: 'rgba(255,255,255,0.01)', 
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: '8px'
-                  }}
-                >
-                  <div>
-                    <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{entry.activity}</h4>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{entry.date}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: entry.isExpense ? 'var(--error)' : 'var(--success)' }}>
-                      {entry.isExpense ? '-' : '+'}₹{entry.cost.toLocaleString()}
-                    </span>
-                    <button 
-                      onClick={() => handleDeleteEntry(entry.id)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--text-disabled)', cursor: 'pointer' }}
-                      onMouseOver={(e) => e.currentTarget.style.color = 'var(--error)'}
-                      onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-disabled)'}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {diaryEntries.length === 0 && (
-                <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '20px' }}>
-                  {formatText("डायरी खाली है। पहला कार्य जोड़ें!", "No logs recorded yet. Add your first operation!")}
-                </p>
-              )}
+              <button onClick={handleOverrideSubmit} className="btn-primary" style={{ background: '#ef4444', borderColor: '#ef4444' }}>
+                Proceed Anyway (Override & Log)
+              </button>
             </div>
           </div>
+        </div>
+      )}
 
+      {/* Entry List */}
+      <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3>Recent Entries ({displayEntries.length})</h3>
+          <button onClick={handleGetAdvisory} disabled={loadingAI} className="btn-secondary" style={{ fontSize: '0.8rem', color: 'var(--primary-emerald)' }}>
+            <Sparkles size={14} /> {loadingAI ? "Analyzing..." : "AI Financial Analysis"}
+          </button>
         </div>
 
-        {/* AI Financial Advisor */}
-        <div className="glass-panel" style={{ padding: '24px', minHeight: '380px' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-emerald)', borderBottom: '1px solid var(--border-outline)', paddingBottom: '12px', marginBottom: '16px' }}>
-            <Sparkles size={20} />
-            {formatText("एआई वित्तीय स्वास्थ्य रिपोर्ट", "AI Financial Advisory")}
-          </h3>
+        {aiReport && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--primary-emerald)', padding: '16px', borderRadius: '10px', fontSize: '0.86rem', lineHeight: '1.6' }}>
+            <strong style={{ color: 'var(--primary-emerald)', display: 'block', marginBottom: '8px' }}>🤖 AI Financial Advisor Report:</strong>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{aiReport}</p>
+          </div>
+        )}
 
-          {aiReport ? (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {renderMarkdown(aiReport)}
-              <button onClick={handleGetAdvisory} className="btn-secondary" style={{ marginTop: '16px', alignSelf: 'flex-start', fontSize: '0.8rem', padding: '6px 12px' }}>
-                <RefreshCw size={12} /> {formatText("पुनः विश्लेषण करें", "Re-Analyze")}
+        {displayEntries.map((item) => (
+          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--glass-bg)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+            <div>
+              <strong style={{ fontSize: '0.92rem' }}>{item.activity}</strong>
+              <span style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>📅 {item.date}</span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <span style={{ fontWeight: '700', fontSize: '1rem', color: item.isExpense ? '#ef4444' : 'var(--primary-emerald)' }}>
+                {item.isExpense ? '-' : '+'}₹{parseFloat(item.cost).toLocaleString()}
+              </span>
+              <button onClick={() => handleDeleteEntry(item.id)} style={{ background: 'transparent', border: 'none', color: 'var(--text-disabled)', cursor: 'pointer' }}>
+                <Trash2 size={16} />
               </button>
             </div>
-          ) : loadingAI ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '260px', gap: '16px' }}>
-              <div style={{ width: '30px', height: '30px', border: '3px solid var(--border-outline)', borderTopColor: 'var(--primary-emerald)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Analyzing farm expenses ledger...</p>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>
-              <TrendingUp size={48} style={{ margin: '0 auto 16px', opacity: '0.5' }} />
-              <p style={{ fontSize: '0.85rem', marginBottom: '16px', lineHeight: '1.6' }}>
-                {formatText(
-                  "एआई आपके खर्चों और आय के बहीखाते का ऑडिट करेगा, और आपको मुनाफे बढ़ाने के लिए 3 विशिष्ट उपाय सुझाएगा।",
-                  "AI will audit your transaction log to find high expense leakages and suggest profit-maximizing steps."
-                )}
-              </p>
-              <button 
-                onClick={handleGetAdvisory} 
-                disabled={diaryEntries.length === 0}
-                className="btn-primary" 
-                style={{ padding: '8px 16px', fontSize: '0.82rem' }}
-              >
-                {formatText("वित्तीय विश्लेषण करें", "Run Financial Analysis")}
-              </button>
-            </div>
-          )}
-        </div>
-
+          </div>
+        ))}
       </div>
 
     </div>

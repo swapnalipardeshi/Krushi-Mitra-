@@ -209,7 +209,7 @@ class _HomeContent extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(28),
                       child: profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty
                           ? Image.network(
-                              profile!.photoUrl!,
+                              profile.photoUrl!,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => const Center(
                                 child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
@@ -539,7 +539,7 @@ class _FeatureGrid extends StatelessWidget {
         screen = const WeatherScreen();
         break;
       case 4:
-        screen = MandiPricesScreen();
+        screen = const MandiPricesScreen();
         break;
       case 5:
         screen = const SchemesListScreen();
@@ -548,7 +548,7 @@ class _FeatureGrid extends StatelessWidget {
         screen = const CropCalendarScreen();
         break;
       case 7:
-        screen = FarmDiaryScreen();
+        screen = const FarmDiaryScreen();
         break;
     }
     if (screen != null) {

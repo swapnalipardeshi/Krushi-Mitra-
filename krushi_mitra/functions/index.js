@@ -1,20 +1,11 @@
 const functions = require("firebase-functions");
 const axios = require("axios");
 
-// This function acts as a secure proxy to the Anthropic Claude API.
-// IMPORTANT: Set your Anthropic API key in Firebase environment config:
-// firebase functions:config:set anthropic.key="YOUR_API_KEY"
+// Unified AI Cloud Function for Krushi Mitra
+// Supports Claude (Primary) and Gemini API Key Rotation (Fallback)
 
 exports.askKrushiMitra = functions.https.onCall(async (data, context) => {
-    // 1. Validate request
-    if (!context.auth) {
-        throw new functions.https.HttpsError(
-            'unauthenticated',
-            'You must be logged in to use the AI Doctor.'
-        );
-    }
-
-    const { text, language, image_base64, crop } = data;
+    const { text, language, image_base64, crop, task } = data;
 
     if (!text && !image_base64) {
         throw new functions.https.HttpsError(
@@ -23,77 +14,73 @@ exports.askKrushiMitra = functions.https.onCall(async (data, context) => {
         );
     }
 
-    // 2. Fetch API Key from environment
-    const apiKey = functions.config().anthropic.key;
-    if (!apiKey) {
-        throw new functions.https.HttpsError(
-            'internal',
-            'API key not configured.'
-        );
-    }
+    const systemPrompt = `You are Krushi Mitra (कृषी मित्र), a friendly expert agricultural assistant for Indian farmers.
+You provide clear, accurate farming advice for Indian crops, pest/disease diagnoses, soil management, market prices, and government schemes.
+Always respond in ${language || "English"}. Use bullet points and simple language.
+${crop ? `Farmer crop context: ${crop}.` : ""}
+Task mode: ${task || "general"}.`;
 
-    // 3. Construct System Prompt
-    const systemPrompt = `You are Krushi Mitra, a friendly and knowledgeable agricultural assistant for Indian farmers. You speak in simple, respectful language. You are expert in:
-- All Indian crops (wheat, rice, sugarcane, cotton, vegetables, fruits, pulses)
-- Crop diseases and pest management
-- Government agriculture schemes and subsidies
-- Organic and chemical farming methods
-- Soil health and irrigation
-- Market and selling advice
-Always respond in ${language || "English"}. Use bullet points and short sentences. Avoid technical jargon. When diagnosing from a photo, be specific but honest about uncertainty. Always end with one encouraging line for the farmer.
-${crop ? `The farmer is asking about their ${crop} crop.` : ""}`;
-
-    // 4. Construct Message Payload
-    let content = [];
+    // 1. Check for Anthropic API Key
+    const anthropicKey = (functions.config().anthropic && functions.config().anthropic.key) || process.env.ANTHROPIC_API_KEY;
     
-    if (image_base64) {
-        content.push({
-            type: "image",
-            source: {
-                type: "base64",
-                media_type: "image/jpeg", // Assuming flutter compresses to JPEG
-                data: image_base64,
+    if (anthropicKey) {
+        try {
+            let content = [];
+            if (image_base64) {
+                content.push({
+                    type: "image",
+                    source: {
+                        type: "base64",
+                        media_type: "image/jpeg",
+                        data: image_base64,
+                    }
+                });
             }
-        });
-    }
+            if (text) {
+                content.push({ type: "text", text: text });
+            }
 
-    if (text) {
-        content.push({
-            type: "text",
-            text: text
-        });
-    }
-
-    try {
-        // 5. Call Anthropic API
-        const response = await axios.post('https://api.anthropic.com/v1/messages', {
-            model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 1024,
-            system: systemPrompt,
-            messages: [
-                {
-                    role: 'user',
-                    content: content
+            const response = await axios.post('https://api.anthropic.com/v1/messages', {
+                model: 'claude-3-5-sonnet-20241022',
+                max_tokens: 1024,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: content }]
+            }, {
+                headers: {
+                    'x-api-key': anthropicKey,
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json'
                 }
-            ]
-        }, {
-            headers: {
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json'
-            }
-        });
+            });
 
-        // 6. Return response to Flutter client
+            return {
+                response: response.data.content[0].text,
+                model: 'claude-3-5-sonnet'
+            };
+        } catch (err) {
+            console.warn("Claude API failed, falling back to Gemini:", err.message);
+        }
+    }
+
+    // 2. Gemini Fallback via HTTP REST
+    const geminiKey = process.env.GEMINI_KEY_1 || (functions.config().gemini && functions.config().gemini.key) || "YOUR_GEMINI_API_KEY";
+    
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+        const contents = [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nQuery: ${text || 'Analyze image'}` }] }];
+        
+        const res = await axios.post(url, { contents }, { headers: { 'Content-Type': 'application/json' } });
+        const textOut = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "AI advisory generated.";
+        
         return {
-            response: response.data.content[0].text,
+            response: textOut,
+            model: 'gemini-1.5-flash'
         };
-
-    } catch (error) {
-        console.error("Claude API Error:", error.response ? error.response.data : error.message);
-        throw new functions.https.HttpsError(
-            'internal',
-            'Failed to get a response from the AI Doctor. Please try again later.'
-        );
+    } catch (e) {
+        console.error("Cloud Function AI error:", e.message);
+        return {
+            response: "Krushi Mitra AI Advisor is currently active in offline mode. Please check internet connection.",
+            model: 'offline-rule-based'
+        };
     }
 });

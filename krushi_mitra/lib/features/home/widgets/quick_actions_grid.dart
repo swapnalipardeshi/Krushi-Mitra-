@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../crop_doctor/screens/crop_doctor_screen.dart';
+import '../../ai_doctor/screens/ai_doctor_screen.dart';
 import '../../market_prices/screens/mandi_prices_screen.dart';
 import '../../weather/screens/weather_screen.dart';
 import '../../govt_schemes/screens/schemes_list_screen.dart';
@@ -42,7 +42,7 @@ class QuickActionGrid extends StatelessWidget {
             Widget? destination;
             switch (action['title']) {
               case 'Crop Doctor':
-                destination = const CropDoctorScreen();
+                destination = const AIDoctorScreen();
                 break;
               case 'Mandi Prices':
                 destination = const MandiPricesScreen();

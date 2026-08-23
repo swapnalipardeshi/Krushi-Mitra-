@@ -194,7 +194,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           }),
           const SizedBox(width: 12),
           _buildActionCard(Icons.menu_book_rounded, 'Farm Diary', AppColors.accentAmber, () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => FarmDiaryScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const FarmDiaryScreen()));
           }),
           const SizedBox(width: 12),
           _buildActionCard(Icons.support_agent_rounded, 'Support', Colors.blueAccent, () {

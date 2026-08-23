@@ -367,7 +367,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   Widget _buildCropInput() {
     final typedText = _commodityController.text.trim().toLowerCase();
     final matchingCrops = _crops.where((c) => c.toLowerCase().contains(typedText)).toList();
-    final isTypedCropInList = _crops.any((c) => c.toLowerCase() == typedText);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -451,7 +450,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _unit,
+                  initialValue: _unit,
                   decoration: const InputDecoration(labelText: 'Unit'),
                   items: ['Kg', 'Quintal', 'Ton'].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
                   onChanged: (val) => setState(() => _unit = val!),
@@ -546,7 +545,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         const SizedBox(height: 2),
         Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary)),
       ])),
-      Switch.adaptive(value: value, onChanged: onChanged, activeColor: AppColors.primaryEmerald),
+      Switch.adaptive(value: value, onChanged: onChanged, activeTrackColor: AppColors.primaryEmerald),
     ]);
   }
 

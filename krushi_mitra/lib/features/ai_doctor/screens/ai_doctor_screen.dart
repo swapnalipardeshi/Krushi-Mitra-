@@ -7,7 +7,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/ai_doctor_provider.dart';
 import '../../../core/services/ai_service.dart';
-import '../../../core/providers/weather_provider.dart';
 import '../../../core/providers/smart_context_provider.dart';
 
 class AIDoctorScreen extends ConsumerStatefulWidget {

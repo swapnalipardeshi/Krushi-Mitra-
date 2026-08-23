@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/chatbot_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 
 import '../../../shared/widgets/custom_app_bar.dart';
 
@@ -262,7 +263,18 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.mic_rounded, color: AppColors.primaryEmerald),
+                onPressed: () async {
+                  final langCode = ref.read(appLanguageProvider);
+                  final localeId = '${langCode}_IN';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Listening in $localeId... Speak now')),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: isTyping ? null : _handleSend,
                 child: Container(

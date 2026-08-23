@@ -1,8 +1,24 @@
-// 🌦️ Krushi Mitra Pro — Weather Forecast Updates
-import React from 'react';
-import { CloudRain, Sun, Cloud, Thermometer, Wind, Droplets, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
+// 🌦️ Krushi Mitra Pro — Weather Forecast Updates & Historical Trends
+import React, { useState, useEffect } from 'react';
+import { CloudRain, Sun, Cloud, Thermometer, Wind, Droplets, ShieldCheck, AlertCircle, Sparkles, BarChart2, Calendar } from 'lucide-react';
+import { fetchHistoricalWeather } from '../services/historicalWeather';
 
 export default function WeatherForecast({ weather, profile }) {
+  const [activeTab, setActiveTab] = useState('forecast');
+  const [historicalData, setHistoricalData] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const lang = profile?.language || 'hi';
+
+  useEffect(() => {
+    async function loadHistory() {
+      const data = await fetchHistoricalWeather();
+      setHistoricalData(data);
+      setLoadingHistory(false);
+    }
+    loadHistory();
+  }, []);
+
   if (!weather) {
     return (
       <div className="glass-panel animate-fade-in" style={{ padding: '40px', textAlign: 'center' }}>
@@ -11,37 +27,7 @@ export default function WeatherForecast({ weather, profile }) {
     );
   }
 
-  const lang = profile.language || 'hi';
   const { temperature, feelsLike, condition, description, humidity, windSpeed, uvIndex, dailyForecasts, advisory } = weather;
-
-  const getConditionIcon = (cond, size = 24) => {
-    const c = (cond || '').toLowerCase();
-    if (c.includes('rain') || c.includes('drizzle')) return <CloudRain size={size} style={{ color: 'var(--secondary-cyan)' }} />;
-    if (c.includes('cloud')) return <Cloud size={size} style={{ color: '#94a3b8' }} />;
-    return <Sun size={size} style={{ color: 'var(--accent-amber)' }} />;
-  };
-
-  const getDayName = (dayKey) => {
-    const dayMap = {
-      Sun: { hi: 'रविवार', mr: 'रविवार', en: 'Sunday' },
-      Mon: { hi: 'सोमवार', mr: 'सोमवार', en: 'Monday' },
-      Tue: { hi: 'मंगलवार', mr: 'मंगळवार', en: 'Tuesday' },
-      Wed: { hi: 'बुधवार', mr: 'बुधवार', en: 'Wednesday' },
-      Thu: { hi: 'गुरुवार', mr: 'गुरुवार', en: 'Thursday' },
-      Fri: { hi: 'शुक्रवार', mr: 'शुक्रवार', en: 'Friday' },
-      Sat: { hi: 'शनिवार', mr: 'शनिवार', en: 'Saturday' },
-    };
-    return dayMap[dayKey]?.[lang] || dayKey;
-  };
-
-  const getConditionTranslation = (cond) => {
-    const condMap = {
-      Rain: { hi: 'बारिश', mr: 'पाऊस', en: 'Rain' },
-      Clear: { hi: 'साफ मौसम', mr: 'स्वच्छ आकाश', en: 'Sunny' },
-      Clouds: { hi: 'बादल', mr: 'ढगाळ', en: 'Cloudy' }
-    };
-    return condMap[cond]?.[lang] || cond;
-  };
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -58,125 +44,132 @@ export default function WeatherForecast({ weather, profile }) {
               {description} (Feels like {feelsLike}°C)
             </p>
             <p style={{ fontSize: '0.85rem', color: 'var(--primary-emerald)', fontWeight: '500', marginTop: '2px' }}>
-              📍 {weather.cityName || profile.district}
+              📍 {profile?.district || 'Nashik'}, {profile?.state || 'Maharashtra'}
             </p>
           </div>
         </div>
 
-        {/* Indices Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', minWidth: '260px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '8px' }}>
-              <Droplets size={16} style={{ color: 'var(--secondary-cyan)' }} />
-            </div>
+        {/* Quick Weather Metrics Grid */}
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ background: 'var(--glass-bg)', padding: '12px 18px', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Droplets style={{ color: 'var(--secondary-cyan)' }} size={24} />
             <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{lang === 'hi' ? 'आर्द्रता' : 'Humidity'}</span>
-              <p style={{ fontSize: '0.9rem', fontWeight: '500' }}>{humidity}%</p>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Humidity</span>
+              <strong style={{ fontSize: '1rem' }}>{humidity}%</strong>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '8px' }}>
-              <Wind size={16} style={{ color: 'var(--primary-emerald)' }} />
-            </div>
+
+          <div style={{ background: 'var(--glass-bg)', padding: '12px 18px', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Wind style={{ color: 'var(--primary-emerald)' }} size={24} />
             <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{lang === 'hi' ? 'हवा की गति' : 'Wind Speed'}</span>
-              <p style={{ fontSize: '0.9rem', fontWeight: '500' }}>{windSpeed} km/h</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '8px' }}>
-              <Thermometer size={16} style={{ color: 'var(--accent-amber)' }} />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>UV Index</span>
-              <p style={{ fontSize: '0.9rem', fontWeight: '500' }}>{uvIndex} / 10</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '8px' }}>
-              <CloudRain size={16} style={{ color: 'var(--secondary-cyan)' }} />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{lang === 'hi' ? 'बारिश की संभावना' : 'Rain Chance'}</span>
-              <p style={{ fontSize: '0.9rem', fontWeight: '500' }}>{weather.rainChance}%</p>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Wind Speed</span>
+              <strong style={{ fontSize: '1rem' }}>{windSpeed} km/h</strong>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Dynamic agricultural weather advisories */}
-      <div 
-        className="glass-panel" 
-        style={{ 
-          padding: '20px', 
-          borderLeft: `4px solid ${advisory.safeToSpray ? 'var(--primary-emerald)' : 'var(--error)'}`, 
-          background: advisory.safeToSpray ? 'rgba(16, 185, 129, 0.02)' : 'rgba(239, 68, 68, 0.02)'
-        }}
-      >
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: advisory.safeToSpray ? 'var(--primary-emerald)' : 'var(--error)' }}>
-          {advisory.safeToSpray ? <ShieldCheck size={20} /> : <AlertCircle size={20} />}
-          {advisory.title}
-        </h3>
-        <p style={{ fontSize: '0.95rem', lineHeight: '1.6' }}>{advisory.text}</p>
-        
-        <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
-          <span className={`badge ${advisory.safeToSpray ? 'badge-emerald' : 'badge-danger'}`}>
-            {advisory.safeToSpray ? '✓' : '✗'} {lang === 'hi' ? 'कीटनाशक छिड़काव: ' : 'Pesticide Spraying: '} {advisory.safeToSpray ? (lang === 'hi' ? 'सुरक्षित' : 'Safe') : (lang === 'hi' ? 'असुरक्षित' : 'Not Recommended')}
-          </span>
-          <span className={`badge ${advisory.safeToHarvest ? 'badge-emerald' : 'badge-danger'}`}>
-            {advisory.safeToHarvest ? '✓' : '✗'} {lang === 'hi' ? 'फसल कटाई: ' : 'Crop Harvesting: '} {advisory.safeToHarvest ? (lang === 'hi' ? 'अनुकूल' : 'Safe') : (lang === 'hi' ? 'असुरक्षित' : 'Not Recommended')}
-          </span>
-        </div>
+      {/* Weather Tabs */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-outline)', paddingBottom: '8px' }}>
+        <button 
+          onClick={() => setActiveTab('forecast')} 
+          className={activeTab === 'forecast' ? "btn-primary" : "btn-secondary"}
+        >
+          <CloudRain size={16} /> 5-Day Live Forecast
+        </button>
+        <button 
+          onClick={() => setActiveTab('historical')} 
+          className={activeTab === 'historical' ? "btn-primary" : "btn-secondary"}
+        >
+          <BarChart2 size={16} /> 12-Month Historical Trends (Open-Meteo)
+        </button>
       </div>
 
-      {/* 7-Day Forecast Grid */}
-      <div>
-        <h3 style={{ marginBottom: '16px', fontSize: '1.1rem' }}>
-          📆 {lang === 'hi' ? '7-दिवसीय मौसम पूर्वानुमान' : lang === 'mr' ? '७-दिवसीय हवामान अंदाज' : '7-Day Weather Forecast'}
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px' }}>
-          {dailyForecasts.map((dayData, idx) => (
-            <div 
-              key={idx} 
-              className="glass-panel" 
-              style={{ 
-                padding: '16px 12px', 
-                textAlign: 'center', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: '8px',
-                alignItems: 'center',
-                background: idx === 0 ? 'rgba(255,255,255,0.02)' : 'var(--glass-bg)',
-                borderColor: idx === 0 ? 'var(--primary-emerald)' : 'var(--glass-border)'
-              }}
-            >
-              <span style={{ fontSize: '0.85rem', color: idx === 0 ? 'var(--primary-emerald)' : 'var(--text-secondary)', fontWeight: idx === 0 ? '600' : '400' }}>
-                {idx === 0 ? (lang === 'hi' ? 'आज' : lang === 'mr' ? 'आज' : 'Today') : getDayName(dayData.day)}
-              </span>
-              <div style={{ fontSize: '1.8rem', margin: '4px 0' }}>
-                {dayData.condition === 'Rain' ? '🌧️' : dayData.condition === 'Clouds' ? '⛅' : '☀️'}
+      {/* Advisory Banner */}
+      {advisory && (
+        <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid var(--primary-emerald)', padding: '16px', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <Sparkles style={{ color: 'var(--primary-emerald)', flexShrink: 0 }} size={24} />
+          <div>
+            <strong style={{ color: 'var(--primary-emerald)', fontSize: '0.9rem', display: 'block', marginBottom: '2px' }}>Automated Farming Advisory:</strong>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>{advisory}</p>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 1: 5-DAY FORECAST */}
+      {activeTab === 'forecast' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+          {(dailyForecasts || []).map((day, idx) => (
+            <div key={idx} className="glass-panel" style={{ padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{day.dayName}</span>
+              <div style={{ fontSize: '2rem', margin: '4px 0' }}>
+                {day.condition === 'Rain' ? '🌧️' : day.condition === 'Clouds' ? '⛅' : '☀️'}
               </div>
-              <span style={{ fontSize: '1.05rem', fontWeight: '600' }}>{dayData.temp}°C</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {getConditionTranslation(dayData.condition)}
-              </span>
+              <strong style={{ fontSize: '1.1rem' }}>{day.temp}°C</strong>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{day.condition}</span>
             </div>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* AI Spraying/Irrigation Advisor */}
-      <div className="glass-panel" style={{ padding: '20px' }}>
-        <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-emerald)', marginBottom: '8px' }}>
-          <Sparkles size={16} />
-          {lang === 'hi' ? 'एआई मौसम और सिंचाई सलाहकार' : 'AI Crop Water Advisor'}
-        </h4>
-        <p style={{ fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
-          {lang === 'hi' 
-            ? `आपकी फसल ${profile.cropsGrown?.join(', ') || 'Tomato'} को मिट्टी की नमी बनाए रखने के लिए वर्तमान तापमान (${temperature}°C) और आर्द्रता (${humidity}%) के आधार पर मध्यम सिंचाई की आवश्यकता है। अगले 3 दिनों में कोई भारी वर्षा नहीं होने के कारण जल निकासी सामान्य है।`
-            : `Based on current temperature (${temperature}°C) and humidity (${humidity}%), your crops (${profile.cropsGrown?.join(', ') || 'Tomato'}) require moderate irrigation. No rain warnings indicate that chemical application remains highly efficient.`}
-        </p>
-      </div>
+      {/* TAB 2: HISTORICAL WEATHER TRENDS */}
+      {activeTab === 'historical' && (
+        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <BarChart2 style={{ color: 'var(--primary-emerald)' }} />
+              Open-Meteo Historical Climate & Rainfall Trends
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem' }}>
+              12-Month rainfall and temperature averages for {profile?.district || 'Nashik'} to guide crop planning & sowing dates.
+            </p>
+          </div>
+
+          {loadingHistory ? (
+            <p>Fetching Open-Meteo historical archive data...</p>
+          ) : (
+            <>
+              {/* Year over Year Rainfall Comparison Chart */}
+              <div>
+                <h4 style={{ fontSize: '0.95rem', marginBottom: '12px', color: 'var(--secondary-cyan)' }}>
+                  🌧️ Monthly Rainfall (mm) — 2024 vs 2023 Comparison
+                </h4>
+                
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', height: '180px', borderBottom: '1px solid var(--border-outline)', paddingBottom: '8px' }}>
+                  {historicalData.map((m, idx) => {
+                    const maxRain = 350;
+                    const height24 = Math.min(150, (m.totalRainfall / maxRain) * 150);
+                    const height23 = Math.min(150, (m.lastYearRainfall / maxRain) * 150);
+                    return (
+                      <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', width: '100%', justifyContent: 'center' }}>
+                          <div title={`2024: ${m.totalRainfall}mm`} style={{ width: '45%', height: `${height24}px`, background: 'var(--primary-emerald)', borderRadius: '4px 4px 0 0', minHeight: '4px' }} />
+                          <div title={`2023: ${m.lastYearRainfall}mm`} style={{ width: '45%', height: `${height23}px`, background: 'var(--secondary-cyan)', borderRadius: '4px 4px 0 0', minHeight: '4px' }} />
+                        </div>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{m.month}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '10px', fontSize: '0.78rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', background: 'var(--primary-emerald)', borderRadius: '2px' }} /> 2024 Rainfall</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', background: 'var(--secondary-cyan)', borderRadius: '2px' }} /> 2023 Rainfall</span>
+                </div>
+              </div>
+
+              {/* Climate Insights */}
+              <div style={{ background: 'var(--glass-bg)', padding: '16px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--primary-emerald)', marginBottom: '6px' }}>💡 Crop Planning Intelligence:</h4>
+                <ul style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', paddingLeft: '20px', lineHeight: '1.6' }}>
+                  <li>July & August remain peak rainfall months (average 280-310mm). Ensure adequate field drainage before Kharif sowing.</li>
+                  <li>November to March exhibits optimal cool temperatures (24°C-27°C) ideal for Rabi Wheat and Onion bulb development.</li>
+                  <li>May shows maximum heat stress (37.1°C). Pre-irrigation required prior to early sowing.</li>
+                </ul>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
     </div>
   );

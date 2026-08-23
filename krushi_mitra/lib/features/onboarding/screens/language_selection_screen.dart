@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/locale_provider.dart';
 import 'profile_setup_screen.dart';
 
-class LanguageSelectionScreen extends StatefulWidget {
+class LanguageSelectionScreen extends ConsumerStatefulWidget {
   const LanguageSelectionScreen({super.key});
 
   @override
-  State<LanguageSelectionScreen> createState() => _LanguageSelectionScreenState();
+  ConsumerState<LanguageSelectionScreen> createState() => _LanguageSelectionScreenState();
 }
 
-class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
-  String _selectedLanguage = 'en';
+class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScreen> {
+  String _selectedLanguage = 'hi';
 
   final List<Map<String, String>> _languages = [
     {'code': 'hi', 'name': 'हिन्दी', 'nativeName': 'Hindi'},
     {'code': 'mr', 'name': 'मराठी', 'nativeName': 'Marathi'},
+    {'code': 'bn', 'name': 'বাংলা', 'nativeName': 'Bengali'},
     {'code': 'gu', 'name': 'ગુજરાતી', 'nativeName': 'Gujarati'},
     {'code': 'pa', 'name': 'ਪੰਜਾਬੀ', 'nativeName': 'Punjabi'},
     {'code': 'ta', 'name': 'தமிழ்', 'nativeName': 'Tamil'},
@@ -59,27 +62,27 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Welcome to Krushi Mitra',
+                'Welcome to Krushi Mitra / कृषी मित्र',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
-                      fontSize: 28,
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
+                  fontSize: 26,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
-                'CHOOSE YOUR LANGUAGE\nअपनी भाषा चुनें',
+                'CHOOSE YOUR LANGUAGE / अपनी भाषा चुनें',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                   fontSize: 12,
                   color: AppColors.primaryEmerald,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
               Expanded(
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -97,6 +100,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                         setState(() {
                           _selectedLanguage = lang['code']!;
                         });
+                        ref.read(appLanguageProvider.notifier).setLanguage(lang['code']!);
                       },
                       borderRadius: BorderRadius.circular(20),
                       child: AnimatedContainer(
@@ -168,6 +172,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   ),
                   child: ElevatedButton(
                     onPressed: () {
+                      ref.read(appLanguageProvider.notifier).setLanguage(_selectedLanguage);
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(

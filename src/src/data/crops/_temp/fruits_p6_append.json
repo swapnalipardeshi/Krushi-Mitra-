@@ -1,0 +1,644 @@
+[
+  {
+    "crop_id": "raisin-grapes",
+    "common_name": "Raisin Grapes",
+    "hindi_name": "किशमिश अंगूर",
+    "regional_names": {},
+    "category": "Fruit",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Dormancy", "day_range": "0-30", "water_requirement_sensitivity": "Low", "stage_advice": "Prune for optimal cane positioning." },
+      { "stage_name": "Bud Break", "day_range": "30-50", "water_requirement_sensitivity": "Medium", "stage_advice": "Monitor for early pest activity." },
+      { "stage_name": "Shoot Growth", "day_range": "50-70", "water_requirement_sensitivity": "High", "stage_advice": "Ensure strong canopy development." },
+      { "stage_name": "Flowering", "day_range": "70-85", "water_requirement_sensitivity": "Low", "stage_advice": "Foliar nutrition critical." },
+      { "stage_name": "Fruit Set", "day_range": "85-105", "water_requirement_sensitivity": "High", "stage_advice": "Adequate water prevents fruit drop." },
+      { "stage_name": "Veraison", "day_range": "105-130", "water_requirement_sensitivity": "Medium", "stage_advice": "Potassium applied for sugar accumulation." },
+      { "stage_name": "Harvest", "day_range": "130-160", "water_requirement_sensitivity": "Low", "stage_advice": "Harvest at very high Brix for drying." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "6.5-7.5",
+      "basal_dose_per_acre": "FYM 10 tons, N: 40kg, P: 50kg, K: 50kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Pale leaves, poor growth.", "solution": "Apply Urea @ 1% spray." },
+        { "nutrient": "Potassium", "symptoms": "Marginal chlorosis.", "solution": "Foliar SOP @ 5kg/acre." },
+        { "nutrient": "Magnesium", "symptoms": "Interveinal chlorosis.", "solution": "MgSO4 @ 30g/15L pump." },
+        { "nutrient": "Zinc", "symptoms": "Little leaf.", "solution": "Zinc Sulphate @ 30g/15L." },
+        { "nutrient": "Boron", "symptoms": "Poor set.", "solution": "Borax @ 15g/15L." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Powdery Mildew",
+        "type": "Fungal",
+        "hindi_name": "पाउडरी फफूंदी",
+        "symptoms": "White powder on leaves and fruit.",
+        "favorable_weather": "Dry and warm.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Open canopy.", "biological_spray": "Ampelomyces quisqualis.", "mechanical": "Remove infected leaves." },
+          "chemical_curative": { "active_ingredient": "Myclobutanil 10% WP", "commercial_reference": "Systhane", "dose_per_15L_pump": "10g", "dose_per_acre": "100g in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Spray at 15-day intervals." }
+        }
+      },
+      {
+        "issue_name": "Mealybug",
+        "type": "Insect-Pest",
+        "hindi_name": "मिलीबग",
+        "symptoms": "White cottony masses.",
+        "favorable_weather": "Warm and dry.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Remove loose bark.", "biological_spray": "Cryptolaemus ladybirds.", "mechanical": "Sticky bands." },
+          "chemical_curative": { "active_ingredient": "Spirotetramat 15.31% OD", "commercial_reference": "Movento", "dose_per_15L_pump": "15ml", "dose_per_acre": "200ml in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Thorough coverage." }
+        }
+      },
+      {
+        "issue_name": "Downy Mildew",
+        "type": "Fungal",
+        "hindi_name": "डाउनी फफूंदी",
+        "symptoms": "Oil spots on leaves, white down on underside.",
+        "favorable_weather": "High humidity, wet.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Good drainage.", "biological_spray": "Trichoderma.", "mechanical": "Prune early." },
+          "chemical_curative": { "active_ingredient": "Dimethomorph 50% WP", "commercial_reference": "Acrobat", "dose_per_15L_pump": "15g", "dose_per_acre": "200g in 200L water", "waiting_period_phi": "28 days", "application_instructions": "Foliar spray." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "almond",
+    "common_name": "Almond",
+    "hindi_name": "बादाम",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Dormancy", "day_range": "Dec-Jan", "water_requirement_sensitivity": "Low", "stage_advice": "Pruning of dead/diseased branches." },
+      { "stage_name": "Bud Break", "day_range": "Feb", "water_requirement_sensitivity": "Medium", "stage_advice": "Critical for early pest management." },
+      { "stage_name": "Flowering", "day_range": "Feb-Mar", "water_requirement_sensitivity": "Low", "stage_advice": "Ensure cross-pollination. Avoid frost damage." },
+      { "stage_name": "Nut Set & Growth", "day_range": "Mar-May", "water_requirement_sensitivity": "High", "stage_advice": "Adequate moisture needed for sizing." },
+      { "stage_name": "Hull Split", "day_range": "Jul-Aug", "water_requirement_sensitivity": "Medium", "stage_advice": "Monitor for Navel Orangeworm." },
+      { "stage_name": "Harvest", "day_range": "Aug-Sep", "water_requirement_sensitivity": "Low", "stage_advice": "Harvest when hulls open." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "6.0-7.5",
+      "basal_dose_per_acre": "N: 80kg, P: 40kg, K: 60kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Pale leaves, reduced yield.", "solution": "Split N application in spring." },
+        { "nutrient": "Zinc", "symptoms": "Little leaf, rosetting.", "solution": "Foliar Zinc Sulphate @ 30g/15L." },
+        { "nutrient": "Boron", "symptoms": "Gumming on nuts, drop.", "solution": "Soil apply Borax @ 15kg/acre." },
+        { "nutrient": "Potassium", "symptoms": "Scorched leaf margins.", "solution": "Apply SOP." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Shot Hole",
+        "type": "Fungal",
+        "hindi_name": "शॉट होल",
+        "symptoms": "Small spots on leaves that drop out, leaving 'shot holes'.",
+        "favorable_weather": "Wet spring weather.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Remove infected leaves.", "biological_spray": "Bacillus subtilis.", "mechanical": "Pruning." },
+          "chemical_curative": { "active_ingredient": "Captan 50% WP", "commercial_reference": "Captaf", "dose_per_15L_pump": "40g", "dose_per_acre": "500g in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Spray at petal fall." }
+        }
+      },
+      {
+        "issue_name": "Navel Orangeworm",
+        "type": "Insect-Pest",
+        "hindi_name": "नेवल ऑरेंजवर्म",
+        "symptoms": "Larvae feed on kernel inside hull. Webbing and frass.",
+        "favorable_weather": "Warm weather at hull split.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Winter sanitation (mummy nut removal).", "biological_spray": "Bt kurstaki.", "mechanical": "Pheromone traps." },
+          "chemical_curative": { "active_ingredient": "Chlorantraniliprole 18.5% SC", "commercial_reference": "Coragen", "dose_per_15L_pump": "6ml", "dose_per_acre": "60ml in 200L water", "waiting_period_phi": "14 days", "application_instructions": "Spray at early hull split." }
+        }
+      },
+      {
+        "issue_name": "Mites",
+        "type": "Insect-Pest",
+        "hindi_name": "मकड़ी",
+        "symptoms": "Stippling of leaves, yellowing, webbing.",
+        "favorable_weather": "Hot, dry, dusty conditions.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Dust control in orchards.", "biological_spray": "Predatory mites release.", "mechanical": "Water sprays." },
+          "chemical_curative": { "active_ingredient": "Spiromesifen 22.9% SC", "commercial_reference": "Oberon", "dose_per_15L_pump": "15ml", "dose_per_acre": "200ml in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Apply when mite threshold reached." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "pistachio",
+    "common_name": "Pistachio",
+    "hindi_name": "पिस्ता",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Dormancy", "day_range": "Dec-Jan", "water_requirement_sensitivity": "Low", "stage_advice": "Pruning." },
+      { "stage_name": "Flowering", "day_range": "Mar-Apr", "water_requirement_sensitivity": "Medium", "stage_advice": "Wind pollination occurs." },
+      { "stage_name": "Nut Set & Growth", "day_range": "Apr-Jun", "water_requirement_sensitivity": "High", "stage_advice": "Shell growth." },
+      { "stage_name": "Kernel Filling", "day_range": "Jul-Aug", "water_requirement_sensitivity": "High", "stage_advice": "Critical for split nuts and full kernels." },
+      { "stage_name": "Harvest", "day_range": "Sep", "water_requirement_sensitivity": "Low", "stage_advice": "Hull separates from shell easily." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "7.0-8.5",
+      "basal_dose_per_acre": "N: 60kg, P: 30kg, K: 50kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Yellowing, poor shoot growth.", "solution": "Urea application." },
+        { "nutrient": "Zinc", "symptoms": "Rosetting, delayed leafing.", "solution": "Zinc foliar spray." },
+        { "nutrient": "Boron", "symptoms": "Blank nuts.", "solution": "Boron soil application." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Botryosphaeria Blight",
+        "type": "Fungal",
+        "hindi_name": "ब्लाइट",
+        "symptoms": "Black lesions on rachis, nuts, and shoots.",
+        "favorable_weather": "Humid, rainy springs.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Pruning out dead wood.", "biological_spray": "Bacillus species.", "mechanical": "Sanitation." },
+          "chemical_curative": { "active_ingredient": "Tebuconazole 25.9% EC", "commercial_reference": "Folicur", "dose_per_15L_pump": "15ml", "dose_per_acre": "200ml in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Spray pre-bloom and post-bloom." }
+        }
+      },
+      {
+        "issue_name": "Navel Orangeworm",
+        "type": "Insect-Pest",
+        "hindi_name": "नेवल ऑरेंजवर्म",
+        "symptoms": "Worms feeding in the nuts.",
+        "favorable_weather": "Warm summer.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Mummy destruction.", "biological_spray": "Bt.", "mechanical": "Pheromone traps." },
+          "chemical_curative": { "active_ingredient": "Spinetoram 11.7% SC", "commercial_reference": "Delegate", "dose_per_15L_pump": "10ml", "dose_per_acre": "150ml in 200L water", "waiting_period_phi": "14 days", "application_instructions": "Hull split application." }
+        }
+      },
+      {
+        "issue_name": "Alternaria Late Blight",
+        "type": "Fungal",
+        "hindi_name": "अल्टरनेरिया लीफ स्पॉट",
+        "symptoms": "Black spots on leaves and fruit late in season.",
+        "favorable_weather": "High humidity, late summer.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Weed control.", "biological_spray": "Pseudomonas.", "mechanical": "Avoid overhead irrigation." },
+          "chemical_curative": { "active_ingredient": "Azoxystrobin + Difenoconazole", "commercial_reference": "Amistar Top", "dose_per_15L_pump": "15ml", "dose_per_acre": "200ml in 200L water", "waiting_period_phi": "28 days", "application_instructions": "Foliar spray." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "hazelnut",
+    "common_name": "Hazelnut / Filbert",
+    "hindi_name": "हेजलनट",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Dormancy", "day_range": "Dec-Jan", "water_requirement_sensitivity": "Low", "stage_advice": "Prune suckers." },
+      { "stage_name": "Flowering", "day_range": "Jan-Mar", "water_requirement_sensitivity": "Low", "stage_advice": "Wind pollination." },
+      { "stage_name": "Nut Set & Growth", "day_range": "Apr-Jul", "water_requirement_sensitivity": "High", "stage_advice": "Irrigation critical for shell sizing." },
+      { "stage_name": "Kernel Filling", "day_range": "Jul-Aug", "water_requirement_sensitivity": "High", "stage_advice": "Water stress leads to blanks." },
+      { "stage_name": "Harvest", "day_range": "Sep-Oct", "water_requirement_sensitivity": "Low", "stage_advice": "Nuts fall to ground." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "6.0-7.0",
+      "basal_dose_per_acre": "N: 40kg, P: 20kg, K: 40kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Pale foliage, small nuts.", "solution": "Urea application in spring." },
+        { "nutrient": "Boron", "symptoms": "Poor set, blank nuts.", "solution": "Foliar Borax pre-bloom." },
+        { "nutrient": "Potassium", "symptoms": "Marginal chlorosis.", "solution": "Apply MOP." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Eastern Filbert Blight",
+        "type": "Fungal",
+        "hindi_name": "फिल्बर्ट ब्लाइट",
+        "symptoms": "Cankers on branches, dying branches.",
+        "favorable_weather": "Wet springs.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Prune 2 feet below canker.", "biological_spray": "None highly effective.", "mechanical": "Burn prunings." },
+          "chemical_curative": { "active_ingredient": "Copper Hydroxide 77% WP", "commercial_reference": "Kocide", "dose_per_15L_pump": "45g", "dose_per_acre": "600g in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Spray at bud break." }
+        }
+      },
+      {
+        "issue_name": "Filbert Worm",
+        "type": "Insect-Pest",
+        "hindi_name": "फिल्बर्ट कीड़ा",
+        "symptoms": "Larvae inside nuts.",
+        "favorable_weather": "Mid-summer.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Early harvest.", "biological_spray": "Trichogramma wasps.", "mechanical": "Pheromone traps." },
+          "chemical_curative": { "active_ingredient": "Esfenvalerate 5% EC", "commercial_reference": "Asana", "dose_per_15L_pump": "10ml", "dose_per_acre": "150ml in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Spray based on trap catch." }
+        }
+      },
+      {
+        "issue_name": "Aphids",
+        "type": "Insect-Pest",
+        "hindi_name": "माहू",
+        "symptoms": "Sooty mold, honeydew, curled leaves.",
+        "favorable_weather": "Cool, humid.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Avoid excess N.", "biological_spray": "Neem Oil.", "mechanical": "Ladybugs." },
+          "chemical_curative": { "active_ingredient": "Imidacloprid 17.8% SL", "commercial_reference": "Confidor", "dose_per_15L_pump": "5ml", "dose_per_acre": "60ml in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Foliar spray." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "pecan-nut",
+    "common_name": "Pecan Nut",
+    "hindi_name": "पीकान",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Bud Break", "day_range": "Mar-Apr", "water_requirement_sensitivity": "High", "stage_advice": "Critical for foliar nutrition." },
+      { "stage_name": "Flowering", "day_range": "Apr-May", "water_requirement_sensitivity": "Medium", "stage_advice": "Pollination." },
+      { "stage_name": "Nut Development", "day_range": "Jun-Aug", "water_requirement_sensitivity": "High", "stage_advice": "Water deficit limits nut size." },
+      { "stage_name": "Kernel Filling", "day_range": "Aug-Sep", "water_requirement_sensitivity": "High", "stage_advice": "Water deficit limits filling." },
+      { "stage_name": "Harvest", "day_range": "Oct-Nov", "water_requirement_sensitivity": "Low", "stage_advice": "Shuck split." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "6.0-7.0",
+      "basal_dose_per_acre": "N: 80kg, P: 40kg, K: 60kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Pale leaves.", "solution": "Split N application." },
+        { "nutrient": "Zinc", "symptoms": "Rosetting, narrow leaves.", "solution": "Frequent foliar Zinc sprays." },
+        { "nutrient": "Potassium", "symptoms": "Marginal scorching.", "solution": "Soil application of MOP." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Pecan Scab",
+        "type": "Fungal",
+        "hindi_name": "पीकान स्कैब",
+        "symptoms": "Black spots on leaves and shucks, causing nut drop.",
+        "favorable_weather": "Frequent rains, high humidity in spring/summer.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Pruning for airflow.", "biological_spray": "Serenade.", "mechanical": "Resistant varieties." },
+          "chemical_curative": { "active_ingredient": "Propiconazole 25% EC", "commercial_reference": "Tilt", "dose_per_15L_pump": "10ml", "dose_per_acre": "150ml in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Spray pre-pollination and through summer." }
+        }
+      },
+      {
+        "issue_name": "Pecan Weevil",
+        "type": "Insect-Pest",
+        "hindi_name": "पीकान वीविल",
+        "symptoms": "Grubs in mature nuts, emergence holes in shells.",
+        "favorable_weather": "Drought followed by heavy rain in late summer.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Early harvest.", "biological_spray": "Beauveria bassiana.", "mechanical": "Trunk traps." },
+          "chemical_curative": { "active_ingredient": "Carbaryl 50% WP", "commercial_reference": "Sevin", "dose_per_15L_pump": "40g", "dose_per_acre": "500g in 200L water", "waiting_period_phi": "14 days", "application_instructions": "Spray when adults emerge in August." }
+        }
+      },
+      {
+        "issue_name": "Aphids (Yellow and Black)",
+        "type": "Insect-Pest",
+        "hindi_name": "माहू",
+        "symptoms": "Yellow spots on leaves, early leaf drop.",
+        "favorable_weather": "Hot summer.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Conserve ladybugs.", "biological_spray": "Neem Oil.", "mechanical": "Water pressure." },
+          "chemical_curative": { "active_ingredient": "Imidacloprid 17.8% SL", "commercial_reference": "Confidor", "dose_per_15L_pump": "5ml", "dose_per_acre": "60ml in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Foliar spray." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "macadamia-nut",
+    "common_name": "Macadamia Nut",
+    "hindi_name": "मैकाडेमिया",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Kharif", "Rabi"],
+    "critical_stages": [
+      { "stage_name": "Flushing", "day_range": "Post-harvest", "water_requirement_sensitivity": "Medium", "stage_advice": "Vegetative growth." },
+      { "stage_name": "Flowering", "day_range": "Aug-Sep", "water_requirement_sensitivity": "High", "stage_advice": "Protect racemes from pests." },
+      { "stage_name": "Nut Set", "day_range": "Oct-Nov", "water_requirement_sensitivity": "High", "stage_advice": "Critical for yield." },
+      { "stage_name": "Oil Accumulation", "day_range": "Dec-Feb", "water_requirement_sensitivity": "Medium", "stage_advice": "Avoid stress." },
+      { "stage_name": "Harvest", "day_range": "Mar-May", "water_requirement_sensitivity": "Low", "stage_advice": "Collect fallen nuts." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "5.0-6.5",
+      "basal_dose_per_acre": "N: 60kg, P: 10kg (sensitive to P), K: 60kg",
+      "deficiencies": [
+        { "nutrient": "Iron", "symptoms": "Chlorosis of young leaves.", "solution": "Foliar Fe-EDTA." },
+        { "nutrient": "Nitrogen", "symptoms": "Pale leaves.", "solution": "Urea application." },
+        { "nutrient": "Potassium", "symptoms": "Poor nut quality.", "solution": "SOP application." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Macadamia Nut Borer",
+        "type": "Insect-Pest",
+        "hindi_name": "नट बोरर",
+        "symptoms": "Larvae bore into husks and kernels.",
+        "favorable_weather": "Warm and humid.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Sanitation.", "biological_spray": "Trichogramma.", "mechanical": "Pheromone trapping." },
+          "chemical_curative": { "active_ingredient": "Indoxacarb 14.5% SC", "commercial_reference": "Avaunt", "dose_per_15L_pump": "10ml", "dose_per_acre": "150ml in 200L water", "waiting_period_phi": "14 days", "application_instructions": "Apply at early husk crack/set." }
+        }
+      },
+      {
+        "issue_name": "Thrips",
+        "type": "Insect-Pest",
+        "hindi_name": "थ्रिप्स",
+        "symptoms": "Damage to flowers, reducing set.",
+        "favorable_weather": "Dry conditions during flowering.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Weed control.", "biological_spray": "Beauveria.", "mechanical": "Blue sticky traps." },
+          "chemical_curative": { "active_ingredient": "Spinosad 45% SC", "commercial_reference": "Tracer", "dose_per_15L_pump": "5ml", "dose_per_acre": "60ml in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Spray racemes." }
+        }
+      },
+      {
+        "issue_name": "Phytophthora Root Rot",
+        "type": "Fungal",
+        "hindi_name": "रूट रोट",
+        "symptoms": "Tree decline, yellowing, trunk cankers.",
+        "favorable_weather": "Waterlogged soil.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Improve drainage.", "biological_spray": "Trichoderma.", "mechanical": "Mounding." },
+          "chemical_curative": { "active_ingredient": "Metalaxyl MZ 72% WP", "commercial_reference": "Ridomil Gold", "dose_per_15L_pump": "30g", "dose_per_acre": "Soil drench", "waiting_period_phi": "30 days", "application_instructions": "Drench around root zone." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "brazil-nut",
+    "common_name": "Brazil Nut",
+    "hindi_name": "ब्राज़ील नट",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Kharif", "Rabi"],
+    "critical_stages": [
+      { "stage_name": "Flowering", "day_range": "Oct-Dec", "water_requirement_sensitivity": "Medium", "stage_advice": "Requires specific large bees for pollination." },
+      { "stage_name": "Pod Development", "day_range": "Jan-Oct", "water_requirement_sensitivity": "High", "stage_advice": "Takes 14 months to mature." },
+      { "stage_name": "Maturation", "day_range": "Nov-Dec", "water_requirement_sensitivity": "Medium", "stage_advice": "Pods turn woody." },
+      { "stage_name": "Harvest", "day_range": "Jan-Mar", "water_requirement_sensitivity": "Low", "stage_advice": "Pods fall naturally." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "4.5-6.5",
+      "basal_dose_per_acre": "Wild harvested mostly; cultivated NPK as per soil test.",
+      "deficiencies": [
+        { "nutrient": "Phosphorus", "symptoms": "Poor growth.", "solution": "Rock phosphate." },
+        { "nutrient": "Nitrogen", "symptoms": "Yellowing.", "solution": "Organic compost." },
+        { "nutrient": "Magnesium", "symptoms": "Interveinal chlorosis.", "solution": "Epsom salts." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Aflatoxin/Aspergillus",
+        "type": "Fungal",
+        "hindi_name": "एस्परगिलस",
+        "symptoms": "Mold on nuts post-harvest.",
+        "favorable_weather": "High humidity post-harvest.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Rapid drying of nuts after collection.", "biological_spray": "None.", "mechanical": "Proper storage." },
+          "chemical_curative": { "active_ingredient": "N/A (Post-harvest management)", "commercial_reference": "N/A", "dose_per_15L_pump": "N/A", "dose_per_acre": "N/A", "waiting_period_phi": "N/A", "application_instructions": "Dry nuts to <10% moisture immediately." }
+        }
+      },
+      {
+        "issue_name": "Leaf Blight",
+        "type": "Fungal",
+        "hindi_name": "लीफ ब्लाइट",
+        "symptoms": "Spots on leaves.",
+        "favorable_weather": "Rainy season.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Spacing.", "biological_spray": "Pseudomonas.", "mechanical": "None." },
+          "chemical_curative": { "active_ingredient": "Mancozeb 75% WP", "commercial_reference": "Dithane M-45", "dose_per_15L_pump": "40g", "dose_per_acre": "500g in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Foliar spray if severe." }
+        }
+      },
+      {
+        "issue_name": "Rodents",
+        "type": "Animal",
+        "hindi_name": "कृंतक (चूहे)",
+        "symptoms": "Gnawed pods on ground.",
+        "favorable_weather": "All weather.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Timely harvest.", "biological_spray": "None.", "mechanical": "Traps." },
+          "chemical_curative": { "active_ingredient": "Bromadiolone", "commercial_reference": "Ratol", "dose_per_15L_pump": "Bait", "dose_per_acre": "Bait stations", "waiting_period_phi": "N/A", "application_instructions": "Place bait in protected stations." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "chestnut",
+    "common_name": "Chestnut (Sweet)",
+    "hindi_name": "शाहबलूत",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Bud Break", "day_range": "Mar-Apr", "water_requirement_sensitivity": "Medium", "stage_advice": "Spring growth." },
+      { "stage_name": "Flowering", "day_range": "Jun-Jul", "water_requirement_sensitivity": "Low", "stage_advice": "Late flowering avoids frost." },
+      { "stage_name": "Burr Development", "day_range": "Aug", "water_requirement_sensitivity": "High", "stage_advice": "Critical for nut sizing." },
+      { "stage_name": "Nut Maturation", "day_range": "Sep", "water_requirement_sensitivity": "High", "stage_advice": "Drought leads to small nuts." },
+      { "stage_name": "Harvest", "day_range": "Oct", "water_requirement_sensitivity": "Low", "stage_advice": "Burrs open and drop nuts." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "5.5-6.5",
+      "basal_dose_per_acre": "N: 50kg, P: 20kg, K: 40kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Yellowing, slow growth.", "solution": "Apply Urea." },
+        { "nutrient": "Potassium", "symptoms": "Poor nut size.", "solution": "SOP application." },
+        { "nutrient": "Iron", "symptoms": "Chlorosis if soil pH is too high.", "solution": "Foliar Iron or elemental sulfur to soil." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Chestnut Blight",
+        "type": "Fungal",
+        "hindi_name": "चेस्टनट ब्लाइट",
+        "symptoms": "Cankers on bark, dieback above canker.",
+        "favorable_weather": "Humid conditions.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Plant resistant varieties (Chinese/hybrids).", "biological_spray": "Hypovirulent strains.", "mechanical": "Prune and destroy infected wood." },
+          "chemical_curative": { "active_ingredient": "Thiophanate Methyl 70% WP", "commercial_reference": "Roko", "dose_per_15L_pump": "Paste", "dose_per_acre": "Paste on cankers", "waiting_period_phi": "N/A", "application_instructions": "Scrape bark and apply fungicidal paste." }
+        }
+      },
+      {
+        "issue_name": "Chestnut Weevil",
+        "type": "Insect-Pest",
+        "hindi_name": "वीविल",
+        "symptoms": "Holes in nuts, grubs inside.",
+        "favorable_weather": "Late summer.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Prompt harvest, heat treat nuts.", "biological_spray": "Beauveria.", "mechanical": "Collect daily." },
+          "chemical_curative": { "active_ingredient": "Carbaryl 50% WP", "commercial_reference": "Sevin", "dose_per_15L_pump": "40g", "dose_per_acre": "500g in 200L water", "waiting_period_phi": "14 days", "application_instructions": "Spray when adults emerge in August." }
+        }
+      },
+      {
+        "issue_name": "Phytophthora Root Rot",
+        "type": "Fungal",
+        "hindi_name": "जड़ सड़ांध",
+        "symptoms": "Ink disease, black sap from base, tree death.",
+        "favorable_weather": "Poor drainage, heavy soils.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Plant on berms/well-drained soil.", "biological_spray": "Trichoderma.", "mechanical": "Avoid overwatering." },
+          "chemical_curative": { "active_ingredient": "Fosetyl-Al 80% WP", "commercial_reference": "Aliette", "dose_per_15L_pump": "30g", "dose_per_acre": "Foliar/Drench", "waiting_period_phi": "30 days", "application_instructions": "Foliar spray or soil drench." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "pine-nut",
+    "common_name": "Pine Nut / Chilgoza",
+    "hindi_name": "चिलगोज़ा",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Pollen Flight", "day_range": "May", "water_requirement_sensitivity": "Low", "stage_advice": "Wind pollination." },
+      { "stage_name": "Cone Initiation", "day_range": "Jun-Jul", "water_requirement_sensitivity": "Medium", "stage_advice": "Cones take 18-36 months to mature." },
+      { "stage_name": "Seed Development", "day_range": "Year 2 Summer", "water_requirement_sensitivity": "Medium", "stage_advice": "Filling of seeds inside cones." },
+      { "stage_name": "Cone Maturation", "day_range": "Year 3 Aug", "water_requirement_sensitivity": "Low", "stage_advice": "Cones turn brown." },
+      { "stage_name": "Harvest", "day_range": "Sep-Oct", "water_requirement_sensitivity": "Low", "stage_advice": "Harvest cones before they open." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "5.5-7.5",
+      "basal_dose_per_acre": "Wild harvested generally. Deep well-drained soils.",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Yellow needles.", "solution": "Organic mulch." },
+        { "nutrient": "Phosphorus", "symptoms": "Slow growth.", "solution": "Rock phosphate." },
+        { "nutrient": "Iron", "symptoms": "Chlorotic new needles.", "solution": "Iron chelates." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Cone Beetles",
+        "type": "Insect-Pest",
+        "hindi_name": "कोन भृंग",
+        "symptoms": "Damage to cones, sap oozing, dead cones.",
+        "favorable_weather": "Dry summers.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Remove damaged cones.", "biological_spray": "None.", "mechanical": "Sanitation." },
+          "chemical_curative": { "active_ingredient": "Chlorpyrifos 20% EC", "commercial_reference": "Dursban", "dose_per_15L_pump": "30ml", "dose_per_acre": "Tree spray", "waiting_period_phi": "60 days", "application_instructions": "Rarely applied in wild, but can spray early season." }
+        }
+      },
+      {
+        "issue_name": "Needle Blight",
+        "type": "Fungal",
+        "hindi_name": "नीडल ब्लाइट",
+        "symptoms": "Browning of needles.",
+        "favorable_weather": "Humid, cool conditions.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Thinning.", "biological_spray": "Bacillus subtilis.", "mechanical": "None." },
+          "chemical_curative": { "active_ingredient": "Copper Oxychloride", "commercial_reference": "Blitox", "dose_per_15L_pump": "45g", "dose_per_acre": "600g in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Foliar spray." }
+        }
+      },
+      {
+        "issue_name": "Aphids",
+        "type": "Insect-Pest",
+        "hindi_name": "माहू",
+        "symptoms": "Sooty mold on needles.",
+        "favorable_weather": "Spring.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Predator conservation.", "biological_spray": "Neem oil.", "mechanical": "None." },
+          "chemical_curative": { "active_ingredient": "Imidacloprid 17.8% SL", "commercial_reference": "Confidor", "dose_per_15L_pump": "5ml", "dose_per_acre": "60ml in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Foliar spray." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "ginkgo-nut",
+    "common_name": "Ginkgo Nut",
+    "hindi_name": "जिंको",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Rabi", "Kharif"],
+    "critical_stages": [
+      { "stage_name": "Leaf Out", "day_range": "Mar", "water_requirement_sensitivity": "Medium", "stage_advice": "Spring growth." },
+      { "stage_name": "Pollination", "day_range": "Apr", "water_requirement_sensitivity": "Low", "stage_advice": "Wind pollination (requires male trees)." },
+      { "stage_name": "Seed Development", "day_range": "May-Aug", "water_requirement_sensitivity": "Medium", "stage_advice": "Plum-like seeds develop." },
+      { "stage_name": "Harvest", "day_range": "Sep-Oct", "water_requirement_sensitivity": "Low", "stage_advice": "Seeds fall, flesh smells foul. Wear gloves." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "5.0-8.0",
+      "basal_dose_per_acre": "Very hardy. N: 30kg, P: 15kg, K: 30kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Yellowing leaves.", "solution": "Urea." },
+        { "nutrient": "Phosphorus", "symptoms": "Stunted growth.", "solution": "DAP." },
+        { "nutrient": "Iron", "symptoms": "Chlorosis in high pH.", "solution": "Iron chelates." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Nematodes",
+        "type": "Nematode",
+        "hindi_name": "निमेटोड",
+        "symptoms": "Root galling, stunted growth.",
+        "favorable_weather": "Sandy soils.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Marigold intercropping.", "biological_spray": "Paecilomyces lilacinus.", "mechanical": "Solarization." },
+          "chemical_curative": { "active_ingredient": "Fluensulfone 2% GR", "commercial_reference": "Nimitz", "dose_per_15L_pump": "Soil application", "dose_per_acre": "1kg", "waiting_period_phi": "60 days", "application_instructions": "Apply to soil." }
+        }
+      },
+      {
+        "issue_name": "Leaf Spots",
+        "type": "Fungal",
+        "hindi_name": "लीफ स्पॉट",
+        "symptoms": "Spots on leaves.",
+        "favorable_weather": "Humid.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Rake leaves.", "biological_spray": "None.", "mechanical": "None." },
+          "chemical_curative": { "active_ingredient": "Mancozeb 75% WP", "commercial_reference": "Dithane", "dose_per_15L_pump": "40g", "dose_per_acre": "500g in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Foliar spray." }
+        }
+      }
+    ]
+  },
+  {
+    "crop_id": "water-chestnut",
+    "common_name": "Water Chestnut / Singhara",
+    "hindi_name": "सिंघाड़ा",
+    "regional_names": {},
+    "category": "Nut",
+    "season": ["Kharif"],
+    "critical_stages": [
+      { "stage_name": "Transplanting", "day_range": "Jun-Jul", "water_requirement_sensitivity": "High", "stage_advice": "Requires 1-2 feet of standing water." },
+      { "stage_name": "Vegetative Growth", "day_range": "Jul-Aug", "water_requirement_sensitivity": "High", "stage_advice": "Leaves cover water surface." },
+      { "stage_name": "Flowering", "day_range": "Aug-Sep", "water_requirement_sensitivity": "High", "stage_advice": "White flowers appear." },
+      { "stage_name": "Nut Development", "day_range": "Sep-Oct", "water_requirement_sensitivity": "High", "stage_advice": "Nuts develop under water." },
+      { "stage_name": "Harvest", "day_range": "Oct-Dec", "water_requirement_sensitivity": "High", "stage_advice": "Multiple pickings (manual)." }
+    ],
+    "soil_and_nutrition": {
+      "ph_range": "6.0-7.5",
+      "basal_dose_per_acre": "N: 30kg, P: 20kg, K: 20kg",
+      "deficiencies": [
+        { "nutrient": "Nitrogen", "symptoms": "Yellowing of floating leaves.", "solution": "Urea mud balls." },
+        { "nutrient": "Phosphorus", "symptoms": "Poor rooting.", "solution": "SSP in pond mud." },
+        { "nutrient": "Zinc", "symptoms": "Small leaves.", "solution": "Foliar Zinc spray." }
+      ]
+    },
+    "pest_and_disease_solutions": [
+      {
+        "issue_name": "Singhara Beetle",
+        "type": "Insect-Pest",
+        "hindi_name": "सिंघाड़ा भृंग (Galerucella)",
+        "symptoms": "Grubs and adults skeletonize the floating leaves.",
+        "favorable_weather": "Humid monsoon weather.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Remove floating weeds.", "biological_spray": "Beauveria bassiana.", "mechanical": "Manual collection of egg masses." },
+          "chemical_curative": { "active_ingredient": "Quinalphos 25% EC", "commercial_reference": "Ekalux", "dose_per_15L_pump": "30ml", "dose_per_acre": "400ml in 200L water", "waiting_period_phi": "30 days", "application_instructions": "Foliar spray avoiding heavy pond runoff." }
+        }
+      },
+      {
+        "issue_name": "Aphids",
+        "type": "Insect-Pest",
+        "hindi_name": "माहू",
+        "symptoms": "Sucking sap from tender leaves and stems.",
+        "favorable_weather": "Dry spells in monsoon.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Conserve predators.", "biological_spray": "Neem oil.", "mechanical": "Washing." },
+          "chemical_curative": { "active_ingredient": "Imidacloprid 17.8% SL", "commercial_reference": "Confidor", "dose_per_15L_pump": "5ml", "dose_per_acre": "60ml in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Spray." }
+        }
+      },
+      {
+        "issue_name": "Leaf Spot",
+        "type": "Fungal",
+        "hindi_name": "लीफ स्पॉट",
+        "symptoms": "Brown circular spots on leaves.",
+        "favorable_weather": "High humidity, rain.",
+        "solutions": {
+          "organic_ipm": { "preventive_measures": "Optimal spacing.", "biological_spray": "Trichoderma.", "mechanical": "Remove infected leaves." },
+          "chemical_curative": { "active_ingredient": "Carbendazim 50% WP", "commercial_reference": "Bavistin", "dose_per_15L_pump": "30g", "dose_per_acre": "400g in 200L water", "waiting_period_phi": "21 days", "application_instructions": "Foliar spray." }
+        }
+      }
+    ]
+  }
+]

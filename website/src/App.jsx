@@ -16,12 +16,13 @@ import CropCalendar from './features/CropCalendar';
 import Community from './features/Community';
 import Marketplace from './features/Marketplace';
 import Profile from './features/Profile';
+import AdminDashboard from './features/AdminDashboard';
 
 // Icons
 import { 
   LayoutDashboard, Sprout, Bot, BarChart2, CloudSun, Landmark, 
   Calculator, BookOpen, Layers, CalendarClock, MessageSquare, 
-  ShoppingBag, User, Menu, X 
+  ShoppingBag, User, Menu, X, Shield 
 } from 'lucide-react';
 
 const TRANSLATIONS = {
@@ -160,79 +161,9 @@ const DEFAULT_PROFILE = {
   avatar: null
 };
 
-const INITIAL_DIARY = [
-  { id: '1', activity: 'Bought Vermicompost Fertilizer', cost: 1200, isExpense: true, date: '2026-07-06' },
-  { id: '2', activity: 'Sowed Premium Tomato Seeds', cost: 850, isExpense: true, date: '2026-07-07' },
-  { id: '3', activity: 'Sold Onion harvest at Pimpalgaon Mandi', cost: 24000, isExpense: false, date: '2026-07-08' }
-];
-
-const INITIAL_COMMUNITY = [
-  {
-    id: 'post_1',
-    author: 'Ramesh Patil',
-    location: 'Nashik, Maharashtra',
-    content: 'मेरे प्याज की पत्तियों के सिरे पीले पड़ रहे हैं और वे सूख रहे हैं। क्या यह थ्रिप्स का हमला है? कोई जैविक उपचार बताएं। 🧅',
-    tag: 'Pests',
-    imageUrl: 'https://images.unsplash.com/photo-1508747703725-719ae2c226e1?q=80&w=500&auto=format&fit=crop',
-    likes: 12,
-    date: '8 Jul',
-    comments: [
-      { id: 'c1', author: 'Aditya Lohar', content: 'हाँ रमेश जी, थ्रिप्स के लिए ५ मिली नीम का तेल प्रति लीटर पानी में मिलाकर शाम को छिड़कें। लाभ मिलेगा।', date: 'Just now' }
-    ]
-  },
-  {
-    id: 'post_2',
-    author: 'Hitesh More',
-    location: 'Pune, Maharashtra',
-    content: 'Today is perfect weather for wheat sowing. Sowing HD 3086 variety today. Praying for a bountiful harvest! 🌾🙏',
-    tag: 'General',
-    imageUrl: null,
-    likes: 24,
-    date: '7 Jul',
-    comments: []
-  }
-];
-
-const INITIAL_LISTINGS = [
-  {
-    id: 'list_1',
-    farmerName: 'Ramesh Patil',
-    commodity: 'Onion',
-    variety: 'Red',
-    quantity: 120,
-    unit: 'Quintal',
-    pricePerUnit: 1350,
-    quality: 'A',
-    location: 'Lasalgaon, Maharashtra',
-    description: 'Grade-A Red onions, well-cured, low moisture content. Ready for immediate load and dispatch.',
-    imageUrl: 'https://images.unsplash.com/photo-1508747703725-719ae2c226e1?q=80&w=500&auto=format&fit=crop',
-    phoneNumber: '9876543210',
-    isOrganic: true,
-    isNegotiable: true,
-    deliveryAvailable: true,
-    isVerified: true,
-    dateListed: '08-07-2026'
-  },
-  {
-    id: 'list_2',
-    farmerName: 'Hitesh More',
-    commodity: 'Tomato',
-    variety: 'Hybrid',
-    quantity: 80,
-    unit: 'Quintal',
-    pricePerUnit: 1800,
-    quality: 'A+',
-    location: 'Pune, Maharashtra',
-    description: 'Fresh organic hybrid tomatoes. Solid texture, uniform red grading. Best for long-distance shipping.',
-    imageUrl: 'https://images.unsplash.com/photo-1595855759920-86582396756a?q=80&w=500&auto=format&fit=crop',
-    phoneNumber: '8765432109',
-    isOrganic: true,
-    isNegotiable: false,
-    deliveryAvailable: true,
-    isVerified: true,
-    dateListed: '07-07-2026'
-  }
-];
+const INITIAL_DIARY = [];
+const INITIAL_COMMUNITY = [];
+const INITIAL_LISTINGS = [];
 
 export default function KrushiMitraApp() {
   // --- States ---
@@ -244,17 +175,17 @@ export default function KrushiMitraApp() {
   const [weather, setWeather] = useState(null);
   const [diaryEntries, setDiaryEntries] = useState(() => {
     const cached = localStorage.getItem('krushi_diary_entries');
-    return cached ? JSON.parse(cached) : INITIAL_DIARY;
+    return cached ? JSON.parse(cached) : [];
   });
 
   const [communityPosts, setCommunityPosts] = useState(() => {
     const cached = localStorage.getItem('krushi_community_posts');
-    return cached ? JSON.parse(cached) : INITIAL_COMMUNITY;
+    return cached ? JSON.parse(cached) : [];
   });
 
   const [listings, setListings] = useState(() => {
     const cached = localStorage.getItem('krushi_marketplace_listings');
-    return cached ? JSON.parse(cached) : INITIAL_LISTINGS;
+    return cached ? JSON.parse(cached) : [];
   });
 
   const [tab, setTab] = useState('dashboard');
@@ -292,6 +223,7 @@ export default function KrushiMitraApp() {
     { key: 'calendar', label: t.calendar, icon: <CalendarClock size={20} /> },
     { key: 'community', label: t.community, icon: <MessageSquare size={20} /> },
     { key: 'marketplace', label: t.marketplace, icon: <ShoppingBag size={20} /> },
+    { key: 'admin', label: t.admin || "Admin Console", icon: <Shield size={20} /> },
     { key: 'profile', label: t.profile, icon: <User size={20} /> },
   ];
 
@@ -667,6 +599,12 @@ export default function KrushiMitraApp() {
             setProfile={setProfile} 
             onSave={() => triggerToast("Profile Settings Saved Successfully! 🌾")} 
             langT={t} 
+          />
+        )}
+
+        {tab === 'admin' && (
+          <AdminDashboard 
+            profile={profile} 
           />
         )}
       </div>

@@ -77,7 +77,7 @@ class MarketService {
       if (district != null && district.isNotEmpty) params['filters[district]'] = district;
       if (commodity != null && commodity.isNotEmpty) params['filters[commodity]'] = commodity;
 
-      final url = 'https://api.data.gov.in/resource/$resourceId';
+      const url = 'https://api.data.gov.in/resource/$resourceId';
       debugPrint('getMarketPrices: GET $url params=$params');
       final response = await _dio.get(
         url,

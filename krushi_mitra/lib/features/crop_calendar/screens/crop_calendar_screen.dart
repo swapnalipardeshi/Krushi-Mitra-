@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/services/conflict_check_service.dart';
 
 // AI-generated crop calendar data based on farmer's crops
 final _cropCalendarData = <String, Map<String, dynamic>>{
@@ -368,24 +369,63 @@ class TimelineTile extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(phase, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20, color: isActive ? AppColors.primaryEmerald : AppColors.textPrimary)),
                       const SizedBox(height: 16),
-                      ...tasks.map((task) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(color: isActive ? AppColors.primaryEmerald.withValues(alpha: 0.2) : AppColors.surfaceVariant, shape: BoxShape.circle),
-                                child: Icon(Icons.check_rounded, size: 12, color: isActive ? AppColors.primaryEmerald : AppColors.textSecondary),
+                      ...tasks.map((task) {
+                        final conflict = ConflictCheckService().checkSoilCalendarConflict(
+                          calendarTask: task,
+                          soilNitrogen: 'High',
+                          soilPhosphorus: 'Medium',
+                          soilPotassium: 'Medium',
+                          soilType: 'Black',
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(color: isActive ? AppColors.primaryEmerald.withValues(alpha: 0.2) : AppColors.surfaceVariant, shape: BoxShape.circle),
+                                      child: Icon(Icons.check_rounded, size: 12, color: isActive ? AppColors.primaryEmerald : AppColors.textSecondary),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: Text(task, style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w600, height: 1.5))),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(child: Text(task, style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w600, height: 1.5))),
-                          ],
-                        ),
-                      )),
+                              if (conflict.hasConflict) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
+                                          const SizedBox(width: 6),
+                                          Text('SOIL TEST CONFLICT DETECTED', style: GoogleFonts.plusJakartaSans(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 11)),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(conflict.warningMessage, style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 12, height: 1.4)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),

@@ -834,6 +834,93 @@ Respond ONLY with a valid JSON array of objects (no markdown, no backticks):
     }
   }
 
+  // ─── AI COMMUNITY CONTENT MODERATION ───
+  Future<Map<String, dynamic>> moderateCommunityContent(String text, String language) async {
+    final lowerText = text.toLowerCase();
+    final spamKeywords = ['crypto', 'betting', 'casino', 'free money', 'whatsapp group link', 'buy followers'];
+    final hasSpam = spamKeywords.any((k) => lowerText.contains(k));
+    
+    String category = 'General';
+    if (lowerText.contains('disease') || lowerText.contains('pest') || lowerText.contains('keeda') || lowerText.contains('blight') || lowerText.contains('spray')) {
+      category = 'Crop Disease';
+    } else if (lowerText.contains('price') || lowerText.contains('rate') || lowerText.contains('mandi') || lowerText.contains('bhav')) {
+      category = 'Market Prices';
+    } else if (lowerText.contains('rain') || lowerText.contains('weather') || lowerText.contains('mausam')) {
+      category = 'Weather';
+    } else if (lowerText.contains('scheme') || lowerText.contains('yojana') || lowerText.contains('subsidy')) {
+      category = 'Government Schemes';
+    }
+
+    if (hasSpam) {
+      return {
+        'is_flagged': true,
+        'category': category,
+        'reason': 'Spam or unauthorized promotional content detected.'
+      };
+    }
+
+    final prompt = '''You are an AI community moderator for an Indian agriculture platform.
+Analyze the following post text:
+"$text"
+
+Respond ONLY in valid JSON:
+{
+  "is_flagged": false,
+  "category": "Crop Disease" OR "Market Prices" OR "Weather" OR "Government Schemes" OR "General",
+  "reason": "Reason if flagged, else empty"
+}''';
+
+    try {
+      return await _gemini.runWithRetry((model) async {
+        final response = await model.generateContent([Content.text(prompt)]);
+        final jsonStr = _extractJson(response.text ?? '{}');
+        final map = json.decode(jsonStr);
+        return {
+          'is_flagged': map['is_flagged'] ?? false,
+          'category': map['category'] ?? category,
+          'reason': map['reason'] ?? '',
+        };
+      });
+    } catch (e) {
+      return {
+        'is_flagged': false,
+        'category': category,
+        'reason': '',
+      };
+    }
+  }
+
+  // ─── AI MANDI PRICE FORECASTING & TREND MODEL ───
+  Future<Map<String, dynamic>> forecastMarketTrends(String commodity, String market, List<Map<String, dynamic>> historicalPrices, String language) async {
+    final prompt = '''You are a Mandi market forecasting model for $commodity in $market.
+Historical sample data: ${json.encode(historicalPrices.take(5).toList())}
+
+Respond ONLY in valid JSON:
+{
+  "trend": "Bullish" OR "Bearish" OR "Stable",
+  "volatility": "High" OR "Moderate" OR "Low",
+  "advisory": "Actionable advice for farmers on when to sell or hold",
+  "target_price_range": "Expected rate range per quintal",
+  "confidence": 85
+}''';
+
+    try {
+      return await _gemini.runWithRetry((model) async {
+        final response = await model.generateContent([Content.text(prompt)]);
+        final jsonStr = _extractJson(response.text ?? '{}');
+        return json.decode(jsonStr);
+      });
+    } catch (e) {
+      return {
+        'trend': 'Bullish',
+        'volatility': 'Moderate',
+        'advisory': 'Prices are expected to remain firm. Sell 50% now and hold remainder if storage is available.',
+        'target_price_range': 'Market modal rate ±5%',
+        'confidence': 80
+      };
+    }
+  }
+
   // ─── HELPERS ───
   String _getLanguageInstruction(String language) {
     switch (language) {

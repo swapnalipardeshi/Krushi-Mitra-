@@ -196,7 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Failed to send reset link. Ensure the email is registered.'), 
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
@@ -317,7 +317,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                                     TextSpan(text: _isLogin ? 'New here? ' : 'Already have an account? '),
                                     TextSpan(
                                       text: _isLogin ? 'Create Account' : 'Login',
-                                      style: TextStyle(color: AppColors.primaryEmerald, fontWeight: FontWeight.w800),
+                                      style: const TextStyle(color: AppColors.primaryEmerald, fontWeight: FontWeight.w800),
                                     ),
                                   ],
                                 ),
@@ -552,13 +552,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     if (!_isPhoneLogin) {
       return _socialButton(
         onTap: () => setState(() { _isPhoneLogin = true; _isOtpSent = false; _slideController.reset(); _slideController.forward(); }),
-        icon: Icon(Icons.phone_android_rounded, color: AppColors.primaryEmerald, size: 22),
+        icon: const Icon(Icons.phone_android_rounded, color: AppColors.primaryEmerald, size: 22),
         label: 'Continue with Phone',
       );
     }
     return _socialButton(
       onTap: () => setState(() { _isPhoneLogin = false; _isOtpSent = false; _slideController.reset(); _slideController.forward(); }),
-      icon: Icon(Icons.email_outlined, color: AppColors.primaryEmerald, size: 22),
+      icon: const Icon(Icons.email_outlined, color: AppColors.primaryEmerald, size: 22),
       label: 'Continue with Email',
     );
   }

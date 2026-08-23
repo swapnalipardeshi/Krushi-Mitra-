@@ -9,6 +9,7 @@ import '../../../core/providers/weather_provider.dart';
 import '../../../core/services/weather_service.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../core/providers/smart_context_provider.dart';
+import '../../../core/services/historical_weather_service.dart';
 
 enum WeatherInfoTab { temperature, precipitation, wind }
 
@@ -59,6 +60,10 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                     _buildSectionTitle('🌾 AI Farming Advisories'),
                     const SizedBox(height: 12),
                     _buildFarmingAdvisories(weather, ref),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('📊 12-Month Historical Climate Trends'),
+                    const SizedBox(height: 12),
+                    _buildHistoricalTrendsCard(),
                     const SizedBox(height: 48),
                   ],
                 ),
@@ -66,7 +71,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
             ),
           ],
         ),
-        loading: () => Center(child: CircularProgressIndicator(color: AppColors.primaryEmerald)),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryEmerald)),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: _textPrimary))),
       ),
     );
@@ -305,9 +310,13 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
             LineChartBarData(
               spots: hourly.asMap().entries.map((e) {
                 double val = 0;
-                if (_selectedTab == WeatherInfoTab.temperature) val = e.value.temperature;
-                else if (_selectedTab == WeatherInfoTab.precipitation) val = e.value.rainChance;
-                else val = e.value.windSpeed;
+                if (_selectedTab == WeatherInfoTab.temperature) {
+                  val = e.value.temperature;
+                } else if (_selectedTab == WeatherInfoTab.precipitation) {
+                  val = e.value.rainChance;
+                } else {
+                  val = e.value.windSpeed;
+                }
                 return FlSpot(e.key.toDouble(), val);
               }).toList(),
               isCurved: true,
@@ -435,6 +444,81 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                   advice,
                   style: GoogleFonts.plusJakartaSans(color: _textPrimary, fontSize: 14, height: 1.6, fontWeight: FontWeight.w600),
                 ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoricalTrendsCard() {
+    return FutureBuilder<List<MonthlyWeatherTrend>>(
+      future: HistoricalWeatherService().getHistoricalTrends(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator(color: AppColors.primaryEmerald));
+        }
+        final trends = snapshot.data!;
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: _surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: _border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Monthly Rainfall (mm) — YoY Comparison', style: GoogleFonts.plusJakartaSans(color: _textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 160,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: trends.length,
+                  itemBuilder: (context, index) {
+                    final t = trends[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Container(
+                                width: 10,
+                                height: (t.totalRainfall / 350 * 100).clamp(4.0, 100.0),
+                                decoration: BoxDecoration(color: AppColors.primaryEmerald, borderRadius: BorderRadius.circular(3)),
+                              ),
+                              const SizedBox(width: 4),
+                              Container(
+                                width: 10,
+                                height: (t.lastYearRainfall / 350 * 100).clamp(4.0, 100.0),
+                                decoration: BoxDecoration(color: AppColors.neonCyan, borderRadius: BorderRadius.circular(3)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(t.month, style: TextStyle(color: _textSecondary, fontSize: 11)),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(width: 10, height: 10, decoration: const BoxDecoration(color: AppColors.primaryEmerald, shape: BoxShape.circle)),
+                  const SizedBox(width: 6),
+                  Text('2024 Rain', style: TextStyle(color: _textSecondary, fontSize: 11)),
+                  const SizedBox(width: 16),
+                  Container(width: 10, height: 10, decoration: const BoxDecoration(color: AppColors.neonCyan, shape: BoxShape.circle)),
+                  const SizedBox(width: 6),
+                  Text('2023 Rain', style: TextStyle(color: _textSecondary, fontSize: 11)),
+                ],
               ),
             ],
           ),

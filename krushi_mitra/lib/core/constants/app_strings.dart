@@ -1,130 +1,402 @@
+// 🌐 Krushi Mitra — Exhaustive 8-Language Translation Dictionary (i18n Engine)
+// Supports: Hindi (hi), Marathi (mr), Gujarati (gu), Punjabi (pa), Tamil (ta), Telugu (te), Kannada (kn), English (en)
+
 class AppStrings {
   AppStrings._();
 
-  // App Info
-  static const String appName = 'Krushi Mitra';
-  static const String appNameDevanagari = 'कृषी मित्र';
-  static const String appTagline = 'Farmer\'s Digital Companion';
-  static const String appVersion = '1.0.0';
+  static const Map<String, Map<String, String>> _translations = {
+    'hi': {
+      'appName': 'कृषी मित्र',
+      'appTagline': 'किसान डिजिटल साथी',
+      'welcome': 'कृषी मित्र में आपका स्वागत है',
+      'chooseLanguage': 'अपनी भाषा चुनें',
+      'continue': 'आगे बढ़ें',
+      'home': 'होम',
+      'aiDoctor': 'एआई फसल डॉक्टर',
+      'aiChatbot': 'एआई चैटबॉट',
+      'mandiPrices': 'मंडी भाव',
+      'weather': 'मौसम अपडेट',
+      'schemes': 'सरकारी योजनाएं',
+      'calculator': 'लागत कैलकुलेटर',
+      'diary': 'फार्म डायरी',
+      'soil': 'मिट्टी सलाहकार',
+      'calendar': 'फसल कैलेंडर',
+      'community': 'किसान मंच',
+      'marketplace': 'फसल बाजार',
+      'profile': 'प्रोफ़ाइल सेटिंग',
+      'adminDashboard': 'प्रशासन डैशबोर्ड',
+      'save': 'सहेजें',
+      'cancel': 'रद्द करें',
+      'delete': 'हटाएं',
+      'edit': 'संपादित करें',
+      'proceedAnyway': 'आगे बढ़ें (ओवरराइड)',
+      'conflictDetected': 'संघर्ष का पता चला',
+      'highRainWarning': 'उच्च वर्षा जोखिम चेतावनी',
+      'loginPhone': 'मोबाइल नंबर से लॉगिन करें',
+      'enterPhone': 'फोन नंबर दर्ज करें',
+      'getOtp': 'ओटीपी प्राप्त करें',
+      'verifyOtp': 'ओटीपी सत्यापित करें',
+      'profileSetup': 'किसान प्रोफ़ाइल सेटअप',
+      'fullName': 'पूरा नाम',
+      'state': 'राज्य',
+      'district': 'ज़िला',
+      'landSize': 'भूमि का आकार (एकड़)',
+      'primaryCrop': 'मुख्य फसल',
+      'soilType': 'मिट्टी का प्रकार',
+      'saveProfile': 'प्रोफ़ाइल सहेजें',
+      'changeLanguage': 'भाषा बदलें',
+      'logout': 'लॉगआउट',
+      'role': 'भूमिका',
+    },
+    'mr': {
+      'appName': 'कृषी मित्र',
+      'appTagline': 'शेतकऱ्यांचा डिजिटल सोबती',
+      'welcome': 'कृषी मित्र मध्ये आपले स्वागत आहे',
+      'chooseLanguage': 'आपली भाषा निवडा',
+      'continue': 'पुढे चला',
+      'home': 'मुख्यपृष्ठ',
+      'aiDoctor': 'एआय पीक डॉक्टर',
+      'aiChatbot': 'एआय चॅटबॉट',
+      'mandiPrices': 'मंडी भाव',
+      'weather': 'हवामान अंदाज',
+      'schemes': 'शासकीय योजना',
+      'calculator': 'खर्च कॅल्क्युलेटर',
+      'diary': 'शेती डायरी',
+      'soil': 'माती सल्लागार',
+      'calendar': 'पीक कॅलेंडर',
+      'community': 'शेतकरी मंच',
+      'marketplace': 'शेती बाजार',
+      'profile': 'प्रोफाइल सेटिंग्ज',
+      'adminDashboard': 'प्रशासन डॅशबोर्ड',
+      'save': 'जतन करा',
+      'cancel': 'रद्द करा',
+      'delete': 'काढून टाका',
+      'edit': 'संपादित करा',
+      'proceedAnyway': 'तरीही पुढे जा',
+      'conflictDetected': 'विरोधाभास आढळला',
+      'highRainWarning': 'मुसळधार पावसाचा इशारा',
+      'loginPhone': 'मोबाइल नंबरने लॉगिन करा',
+      'enterPhone': 'फोन नंबर टाका',
+      'getOtp': 'ओटीपी मिळवा',
+      'verifyOtp': 'ओटीपी सत्यापित करा',
+      'profileSetup': 'शेतकरी प्रोफाइल माहिती',
+      'fullName': 'पूर्ण नाव',
+      'state': 'राज्य',
+      'district': 'जिल्हा',
+      'landSize': 'जमीन क्षेत्र (एकर)',
+      'primaryCrop': 'मुख्य पीक',
+      'soilType': 'मातीचा प्रकार',
+      'saveProfile': 'प्रोफाइल जतन करा',
+      'changeLanguage': 'भाषा बदला',
+      'logout': 'लॉगआउट',
+      'role': 'भूमिका',
+    },
+    'gu': {
+      'appName': 'કૃષિ મિત્ર',
+      'appTagline': 'ખેડૂત ડિજિટલ સાથી',
+      'welcome': 'કૃષિ મિત્રમાં આપનું સ્વાગત છે',
+      'chooseLanguage': 'તમારી ભાષા પસંદ કરો',
+      'continue': 'આગળ વધો',
+      'home': 'હોમ',
+      'aiDoctor': 'એઆઈ પાક ડોક્ટર',
+      'aiChatbot': 'એઆઈ ચેટબોટ',
+      'mandiPrices': 'મંડી ભાવ',
+      'weather': 'હવામાન માહિતી',
+      'schemes': 'સરકારી યોજનાઓ',
+      'calculator': 'ખર્ચ કેલ્ક્યુલેટર',
+      'diary': 'ફાર્મ ડાયરી',
+      'soil': 'જમીન સલાહકાર',
+      'calendar': 'પાક કેલેન્ડર',
+      'community': 'ખેડૂત મંચ',
+      'marketplace': 'પાક બજાર',
+      'profile': 'પ્રોફાઇલ સેટીંગ્સ',
+      'adminDashboard': 'એડમિન ડેશબોર્ડ',
+      'save': 'સાચવો',
+      'cancel': 'રદ કરો',
+      'delete': 'કાઢી નાખો',
+      'edit': 'ફેરફાર કરો',
+      'proceedAnyway': 'તો પણ આગળ વધો',
+      'conflictDetected': 'સુસંગતતા નથી',
+      'highRainWarning': 'ભારે વરસાદની ચેતવણી',
+      'loginPhone': 'મોબાઈલ નંબરથી લોગિન કરો',
+      'enterPhone': 'ફોન નંબર દાખલ કરો',
+      'getOtp': 'ઓટીપી મેળવો',
+      'verifyOtp': 'ઓટીપી ચકાસો',
+      'profileSetup': 'ખેડૂત પ્રોફાઇલ સેટઅપ',
+      'fullName': 'પૂરું નામ',
+      'state': 'રાજ્ય',
+      'district': 'જિલ્લો',
+      'landSize': 'જમીન (એકર)',
+      'primaryCrop': 'મુખ્ય પાક',
+      'soilType': 'જમીનનો પ્રકાર',
+      'saveProfile': 'પ્રોફાઇલ સાચવો',
+      'changeLanguage': 'ભાષા બદલો',
+      'logout': 'લોગઆઉટ',
+      'role': 'ભૂમિકા',
+    },
+    'pa': {
+      'appName': 'ਕ੍ਰਿਸ਼ੀ ਮਿੱਤਰ',
+      'appTagline': 'ਕਿਸਾਨ ਦਾ ਡਿਜੀਟਲ ਸਾਥੀ',
+      'welcome': 'ਕ੍ਰਿਸ਼ੀ ਮਿੱਤਰ ਵਿੱਚ ਤੁਹਾਡਾ ਸੁਆਗਤ ਹੈ',
+      'chooseLanguage': 'ਆਪਣੀ ਭਾਸ਼ਾ ਚੁਣੋ',
+      'continue': 'ਅੱਗੇ ਵਧੋ',
+      'home': 'ਹੋਮ',
+      'aiDoctor': 'ਏਆਈ ਫਸਲ ਡਾਕਟਰ',
+      'aiChatbot': 'ਏਆਈ ਚੈਟਬੋਟ',
+      'mandiPrices': 'ਮੰਡੀ ਭਾਅ',
+      'weather': 'ਮੌਸਮ ਅਪਡੇਟ',
+      'schemes': 'ਸਰਕਾਰੀ ਸਕੀਮਾਂ',
+      'calculator': 'ਖਰਚਾ ਕੈਲਕੁਲੇਟਰ',
+      'diary': 'ਫਾਰਮ ਡਾਇਰੀ',
+      'soil': 'ਮਿੱਟੀ ਸਲਾਹਕਾਰ',
+      'calendar': 'ਫਸਲ ਕੈਲੰਡਰ',
+      'community': 'ਕਿਸਾਨ ਮੰਚ',
+      'marketplace': 'ਫਸਲ ਮੰਡੀ',
+      'profile': 'ਪ੍ਰੋਫਾਈਲ ਸੈਟਿੰਗਾਂ',
+      'adminDashboard': 'ਐਡਮਿਨ ਡੈਸ਼ਬੋਰਡ',
+      'save': 'ਸੰਭਾਲੋ',
+      'cancel': 'ਰੱਦ ਕਰੋ',
+      'delete': 'ਹਟਾਓ',
+      'edit': 'ਸੋਧੋ',
+      'proceedAnyway': 'ਫਿਰ ਵੀ ਅੱਗੇ ਵਧੋ',
+      'conflictDetected': 'ਸਮੱਸਿਆ ਪਛਾਣੀ ਗਈ',
+      'highRainWarning': 'ਭਾਰੀ ਮੀਂਹ ਦੀ ਚੇਤਾਵਨੀ',
+      'loginPhone': 'ਮੋਬਾਈਲ ਨੰਬਰ ਨਾਲ ਲੌਗਇਨ ਕਰੋ',
+      'enterPhone': 'ਫੋਨ ਨੰਬਰ ਦਰਜ ਕਰੋ',
+      'getOtp': 'ਓਟੀਪੀ ਪ੍ਰਾਪਤ ਕਰੋ',
+      'verifyOtp': 'ਓਟੀਪੀ ਦੀ ਜਾਂਚ ਕਰੋ',
+      'profileSetup': 'ਕਿਸਾਨ ਪ੍ਰੋਫਾਈਲ ਸੈੱਟਅੱਪ',
+      'fullName': 'ਪੂਰਾ ਨਾਮ',
+      'state': 'ਰਾਜ',
+      'district': 'ਜ਼ਿਲ੍ਹਾ',
+      'landSize': 'ਜ਼ਮੀਨ (ਏਕੜ)',
+      'primaryCrop': 'ਮੁੱਖ ਫਸਲ',
+      'soilType': 'ਮਿੱਟੀ ਦੀ ਕਿਸਮ',
+      'saveProfile': 'ਪ੍ਰੋਫਾਈਲ ਸੰਭਾਲੋ',
+      'changeLanguage': 'ਭਾਸ਼ਾ ਬਦਲੋ',
+      'logout': 'ਲੌਗਆਉਟ',
+      'role': 'ਭੂਮਿਕਾ',
+    },
+    'ta': {
+      'appName': 'க்ருஷி மித்ரா',
+      'appTagline': 'விவசாயியின் டிஜிட்டல் தோழன்',
+      'welcome': 'க்ருஷி மித்ராவிற்கு வரவேற்கிறோம்',
+      'chooseLanguage': 'மொழியைத் தேர்ந்தெடுக்கவும்',
+      'continue': 'தொடரவும்',
+      'home': 'முகப்பு',
+      'aiDoctor': 'AI பயிர் டாக்டர்',
+      'aiChatbot': 'AI சாட்பாட்',
+      'mandiPrices': 'சந்தை விலைகள்',
+      'weather': 'வானிலை தகவல்கள்',
+      'schemes': 'அரசு திட்டங்கள்',
+      'calculator': 'செலவு கணக்கீட்டாளர்',
+      'diary': 'பண்ணை நாட்குறிப்பு',
+      'soil': 'மண் ஆலோசகர்',
+      'calendar': 'பயிர் காலண்டர்',
+      'community': 'விவசாயிகள் மன்றம்',
+      'marketplace': 'பயிர் சந்தை',
+      'profile': 'சுயவிவர அமைப்புகள்',
+      'adminDashboard': 'நிர்வாக பலகை',
+      'save': 'சேமிக்கவும்',
+      'cancel': 'ரத்து செய்',
+      'delete': 'நீக்கு',
+      'edit': 'திருத்து',
+      'proceedAnyway': 'இருப்பினும் தொடரவும்',
+      'conflictDetected': 'முரண்பாடு கண்டறியப்பட்டது',
+      'highRainWarning': 'கனமழை எச்சரிக்கை',
+      'loginPhone': 'மொபைல் மூலம் உள்நுழைக',
+      'enterPhone': 'தொலைபேசி எண் உள்ளிடவும்',
+      'getOtp': 'OTP பெறவும்',
+      'verifyOtp': 'OTP சரிபார்க்கவும்',
+      'profileSetup': 'விவசாயி சுயவிவரம்',
+      'fullName': 'முழு பெயர்',
+      'state': 'மாநிலம்',
+      'district': 'மாவட்டம்',
+      'landSize': 'நில அளவு (ஏக்கர்)',
+      'primaryCrop': 'முக்கிய பயிர்',
+      'soilType': 'மண் வகை',
+      'saveProfile': 'சுயவிவரம் சேமிக்க',
+      'changeLanguage': 'மொழி மாற்றவும்',
+      'logout': 'வெளியேறு',
+      'role': 'பங்கு',
+    },
+    'te': {
+      'appName': 'కృషి మిత్ర',
+      'appTagline': 'రైతు డిజిటల్ నేస్తం',
+      'welcome': 'కృషి మిత్రకు స్వాగతం',
+      'chooseLanguage': 'మీ భాషను ఎంచుకోండి',
+      'continue': 'ముందుకు సాగండి',
+      'home': 'హోమ్',
+      'aiDoctor': 'AI పంట డాక్టర్',
+      'aiChatbot': 'AI చాట్‌బాట్',
+      'mandiPrices': 'మండీ ధరలు',
+      'weather': 'వాతావరణ సమాచారం',
+      'schemes': 'ప్రభుత్వ పథకాలు',
+      'calculator': 'ఖర్చు కాలిక్యులేటర్',
+      'diary': 'ఫార్మ్ డైరీ',
+      'soil': 'నేల సలహాదారు',
+      'calendar': 'పంట క్యాలెండర్',
+      'community': 'రైతు వేదిక',
+      'marketplace': 'పంట మార్కెట్',
+      'profile': 'ప్రొఫైల్ సెట్టింగ్‌లు',
+      'adminDashboard': 'అడ్మిన్ డాష్‌బోర్డ్',
+      'save': 'సేవ్ చేయి',
+      'cancel': 'రద్దు చేయి',
+      'delete': 'తొలగించు',
+      'edit': 'సవరించు',
+      'proceedAnyway': 'అయినా సరే కొనసాగించండి',
+      'conflictDetected': 'సమస్య గుర్తించబడింది',
+      'highRainWarning': 'భారీ వర్ష హెచ్చరిక',
+      'loginPhone': 'మొబైల్ నంబర్‌తో లాగిన్ అవ్వండి',
+      'enterPhone': 'ఫోన్ నంబర్ నమోదు చేయండి',
+      'getOtp': 'OTP పొందండి',
+      'verifyOtp': 'OTP ని సరిచూడండి',
+      'profileSetup': 'రైతు ప్రొఫైల్ సెటప్',
+      'fullName': 'పూర్తి పేరు',
+      'state': 'రాష్ట్రం',
+      'district': 'జిల్లా',
+      'landSize': 'భూమి (ఎకరాలు)',
+      'primaryCrop': 'ముఖ్యమైన పంట',
+      'soilType': 'నేల రకం',
+      'saveProfile': 'ప్రొఫైల్ సేవ్ చేయి',
+      'changeLanguage': 'భాష మార్చండి',
+      'logout': 'లాగౌట్',
+      'role': 'పాత్ర',
+    },
+    'kn': {
+      'appName': 'కృషి మిత్ర',
+      'appTagline': 'రైతు డిజిటల్ నేస్తం',
+      'welcome': 'కృషి మిత్రకు స్వాగతం',
+      'chooseLanguage': 'మీ భాషను ఎంచుకోండి',
+      'continue': 'ముందుకు సాగండి',
+      'home': 'హోమ్',
+      'aiDoctor': 'AI పంట డాక్టర్',
+      'aiChatbot': 'AI చాట్‌బాట్',
+      'mandiPrices': 'మండీ ధరలు',
+      'weather': 'వాతావరణ సమాచారం',
+      'schemes': 'ప్రభుత్వ పథకాలు',
+      'calculator': 'ఖర్చు కాలిక్యులేటర్',
+      'diary': 'ఫార్మ్ డైరీ',
+      'soil': 'నేల సలహాదారు',
+      'calendar': 'పంట క్యాలెండర్',
+      'community': 'రైతు వేదిక',
+      'marketplace': 'పంట మార్కెట్',
+      'profile': 'ప్రొఫైల్ సెట్టింగ్‌లు',
+      'adminDashboard': 'అడ్మిన్ డాష్‌బోర్డ్',
+      'save': 'సేవ్ చేయి',
+      'cancel': 'రద్దు చేయి',
+      'delete': 'తొలగించు',
+      'edit': 'సవరించు',
+      'proceedAnyway': 'అయినా సరే కొనసాగించండి',
+      'conflictDetected': 'సమస్య గుర్తించబడింది',
+      'highRainWarning': 'భారీ వర్ష హెచ్చరిక',
+      'loginPhone': 'మొబైల్ నంబర్‌తో లాగిన్ అవ్వండి',
+      'enterPhone': 'ఫోన్ నంబర్ నమోదు చేయండి',
+      'getOtp': 'OTP పొందండి',
+      'verifyOtp': 'OTP ని సరిచూడండి',
+      'profileSetup': 'రైతు ప్రొఫైల్ సెటప్',
+      'fullName': 'పూర్తి పేరు',
+      'state': 'రాష్ట్రం',
+      'district': 'జిల్లా',
+      'landSize': 'భూమి (ఎకరాలు)',
+      'primaryCrop': 'ముఖ్యమైన పంట',
+      'soilType': 'నేల రకం',
+      'saveProfile': 'ప్రొఫైల్ సేవ్ చేయి',
+      'changeLanguage': 'భాష మార్చండి',
+      'logout': 'లాగౌట్',
+      'role': 'పాత్ర',
+    },
+    'bn': {
+      'appName': 'কৃষি মিত্র',
+      'appTagline': 'কৃষকের ডিজিটাল সাথী',
+      'welcome': 'কৃষি মিত্রতে স্বাগতম',
+      'chooseLanguage': 'আপনার ভাষা নির্বাচন করুন',
+      'continue': 'এগিয়ে যান',
+      'home': 'হোম',
+      'aiDoctor': 'এআই ফসল ডাক্তার',
+      'aiChatbot': 'এআই চ্যাটবট',
+      'mandiPrices': 'মন্ডি দাম',
+      'weather': 'আবহাওয়া আপডেট',
+      'schemes': 'সরকারি প্রকল্প',
+      'calculator': 'খরচ ক্যালকুলেটর',
+      'diary': 'ফার্ম ডায়েরি',
+      'soil': 'মাটি পরামর্শদাতা',
+      'calendar': 'ফসল ক্যালেন্ডার',
+      'community': 'কৃষক ফোরাম',
+      'marketplace': 'ফসল বাজার',
+      'profile': 'প্রোফাইল সেটিংস',
+      'adminDashboard': 'এডমিন ড্যাশবোর্ড',
+      'save': 'সংরক্ষণ করুন',
+      'cancel': 'বাতিল করুন',
+      'delete': 'মুছে ফেলুন',
+      'edit': 'সম্পাদনা করুন',
+      'proceedAnyway': 'তবুও এগিয়ে যান',
+      'conflictDetected': 'দ্বন্দ্ব সনাক্ত করা হয়েছে',
+      'highRainWarning': 'ভারী বৃষ্টির সতর্কতা',
+      'loginPhone': 'মোবাইল নম্বর দিয়ে লগইন করুন',
+      'enterPhone': 'ফোন নম্বর লিখুন',
+      'getOtp': 'ওটিপি পান',
+      'verifyOtp': 'ওটিপি যাচাই করুন',
+      'profileSetup': 'কৃষক প্রোফাইল সেটআপ',
+      'fullName': 'সম্পূর্ণ নাম',
+      'state': 'রাজ্য',
+      'district': 'জেলা',
+      'landSize': 'জমির পরিমাণ (একর)',
+      'primaryCrop': 'প্রধান ফসল',
+      'soilType': 'মাটির ধরন',
+      'saveProfile': 'প্রোফাইল সংরক্ষণ করুন',
+      'changeLanguage': 'ভাষা পরিবর্তন করুন',
+      'logout': 'লগআউট',
+      'role': 'ভূমিকা',
+    },
+    'en': {
+      'appName': 'Krushi Mitra',
+      'appTagline': 'Farmer\'s Digital Companion',
+      'welcome': 'Welcome to Krushi Mitra',
+      'chooseLanguage': 'Choose Your Language',
+      'continue': 'Continue',
+      'home': 'Home',
+      'aiDoctor': 'AI Crop Doctor',
+      'aiChatbot': 'AI Chatbot',
+      'mandiPrices': 'Mandi Prices',
+      'weather': 'Weather Updates',
+      'schemes': 'Govt Schemes',
+      'calculator': 'Input Calculator',
+      'diary': 'Farm Diary',
+      'soil': 'Soil Advisor',
+      'calendar': 'Crop Calendar',
+      'community': 'Community Feed',
+      'marketplace': 'Marketplace',
+      'profile': 'Profile Settings',
+      'adminDashboard': 'Admin Dashboard',
+      'save': 'Save',
+      'cancel': 'Cancel',
+      'delete': 'Delete',
+      'edit': 'Edit',
+      'proceedAnyway': 'Proceed Anyway (Override)',
+      'conflictDetected': 'Conflict Detected',
+      'highRainWarning': 'High Rain Risk Warning',
+      'loginPhone': 'Login with Mobile Number',
+      'enterPhone': 'Enter Phone Number',
+      'getOtp': 'Get OTP',
+      'verifyOtp': 'Verify OTP',
+      'profileSetup': 'Farmer Profile Setup',
+      'fullName': 'Full Name',
+      'state': 'State',
+      'district': 'District',
+      'landSize': 'Land Size (Acres)',
+      'primaryCrop': 'Primary Crop',
+      'soilType': 'Soil Type',
+      'saveProfile': 'Save Profile',
+      'changeLanguage': 'Change Language',
+      'logout': 'Logout',
+      'role': 'Role',
+    }
+  };
 
-  // Languages
-  static const String langEnglish = 'English';
-  static const String langHindi = 'हिन्दी';
-  static const String langMarathi = 'मराठी';
-
-  // Onboarding
-  static const String onboardingTitle1 = 'AI Crop Doctor';
-  static const String onboardingTitle1Hi = 'AI फसल चिकित्सक';
-  static const String onboardingDesc1 = 'Detect crop diseases instantly with AI-powered photo analysis';
-  static const String onboardingDesc1Hi = 'AI से फसल की बीमारी तुरंत पहचानें';
-
-  static const String onboardingTitle2 = 'Government Schemes';
-  static const String onboardingTitle2Hi = 'सरकारी योजनाएं';
-  static const String onboardingDesc2 = 'Get info on PM-KISAN, crop insurance & subsidies';
-  static const String onboardingDesc2Hi = 'PM-KISAN, फसल बीमा और सब्सिडी की जानकारी';
-
-  static const String onboardingTitle3 = 'Market & Weather';
-  static const String onboardingTitle3Hi = 'मंडी भाव और मौसम';
-  static const String onboardingDesc3 = 'Live mandi prices & farming-specific weather forecasts';
-  static const String onboardingDesc3Hi = 'लाइव मंडी भाव और खेती के लिए मौसम जानकारी';
-
-  // Auth
-  static const String enterPhone = 'Enter Phone Number';
-  static const String getOtp = 'Get OTP';
-  static const String verifyOtp = 'Verify OTP';
-  static const String loginWithPhone = 'Login with Mobile Number';
-
-  // Home
-  static const String greeting = 'Namaste';
-  static const String goodMorning = 'Good Morning';
-  static const String todaysTip = "Today's Farming Tip";
-  static const String quickActions = 'Quick Actions';
-  static const String latestNews = 'Latest Updates';
-
-  // Features
-  static const String cropDoctor = 'AI Crop Doctor';
-  static const String cropDoctorHi = 'फसल चिकित्सक';
-  static const String govtSchemes = 'Govt Schemes';
-  static const String govtSchemesHi = 'सरकारी योजनाएं';
-  static const String mandiPrices = 'Mandi Prices';
-  static const String mandiPricesHi = 'मंडी भाव';
-  static const String aiChat = 'AI Assistant';
-  static const String aiChatHi = 'AI सहायक';
-  static const String cropCalendar = 'Crop Calendar';
-  static const String cropCalendarHi = 'फसल कैलेंडर';
-  static const String soilAdvisor = 'Soil Advisor';
-  static const String soilAdvisorHi = 'मृदा सलाहकार';
-  static const String farmDiary = 'Farm Diary';
-  static const String farmDiaryHi = 'खेत डायरी';
-  static const String calculator = 'Calculator';
-  static const String calculatorHi = 'कैलकुलेटर';
-  static const String community = 'Community';
-  static const String communityHi = 'किसान मंच';
-  static const String expertConnect = 'Expert Connect';
-  static const String expertConnectHi = 'विशेषज्ञ';
-  static const String weather = 'Weather';
-  static const String weatherHi = 'मौसम';
-  static const String profile = 'Profile';
-
-  // AI Analysis
-  static const String analyzing = 'AI is analyzing your crop...';
-  static const String analyzingHi = 'AI आपकी फसल की जांच कर रही है...';
-  static const String uploadImage = 'Upload or Take Photo';
-  static const String uploadImageHi = 'फोटो लें या अपलोड करें';
-  static const String diagnose = 'Diagnose Now';
-  static const String diagnoseHi = 'जांच करें';
-  static const String cropHealthy = 'Crop is Healthy!';
-  static const String cropDiseased = 'Disease Detected';
-  static const String treatment = 'Treatment';
-  static const String prevention = 'Prevention';
-  static const String symptoms = 'Symptoms';
-  static const String causes = 'Causes';
-  static const String severity = 'Severity';
-  static const String organicTreatment = 'Organic Treatment';
-  static const String chemicalTreatment = 'Chemical Treatment';
-  static const String askAiMore = 'Ask AI More Questions';
-
-  // Chat
-  static const String typeMessage = 'Type your question...';
-  static const String typeMessageHi = 'कोई सवाल पूछें...';
-  static const String offlineChat = 'Connect to internet for AI features';
-  static const String suggestedQ1 = 'मेरी फसल पीली क्यों हो रही है?';
-  static const String suggestedQ2 = 'कपास में कीट नियंत्रण कैसे करें?';
-  static const String suggestedQ3 = 'सोयाबीन की बुवाई कब करें?';
-  static const String suggestedQ4 = 'PM किसान योजना के लिए कैसे आवेदन करें?';
-
-  // Market
-  static const String selectState = 'Select State';
-  static const String selectDistrict = 'Select District';
-  static const String selectMandi = 'Select Mandi';
-  static const String commodity = 'Commodity';
-  static const String minPrice = 'Min ₹';
-  static const String maxPrice = 'Max ₹';
-  static const String modalPrice = 'Modal ₹';
-  static const String priceDate = 'Date';
-  static const String setAlert = 'Set Price Alert';
-  static const String priceChart = '7-Day Price Trend';
-
-  // Common
-  static const String loading = 'Loading...';
-  static const String retry = 'Retry';
-  static const String cancel = 'Cancel';
-  static const String save = 'Save';
-  static const String submit = 'Submit';
-  static const String next = 'Next';
-  static const String back = 'Back';
-  static const String skip = 'Skip';
-  static const String done = 'Done';
-  static const String search = 'Search...';
-  static const String noDataFound = 'No data found';
-  static const String somethingWentWrong = 'Something went wrong. Please try again.';
-  static const String noInternet = 'No internet connection';
-  static const String offline = 'You are offline';
-  static const String offlineBanner = 'No internet connection. Some features are limited.';
-
-  // Errors
-  static const String errorInvalidPhone = 'Please enter a valid 10-digit mobile number';
-  static const String errorInvalidOtp = 'Please enter the 6-digit OTP';
-  static const String errorNameRequired = 'Name is required';
-  static const String errorApiKey = 'API key not configured. Contact support.';
+  /// Translate string by key and language code with English fallback
+  static String tr(String key, String langCode) {
+    final langMap = _translations[langCode] ?? _translations['hi'] ?? _translations['en']!;
+    return langMap[key] ?? _translations['en']![key] ?? key;
+  }
 }

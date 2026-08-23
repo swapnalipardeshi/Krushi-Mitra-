@@ -10,6 +10,7 @@ import '../../../data/models/farm_diary_model.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../../core/providers/smart_context_provider.dart';
 import '../../../core/services/ai_service.dart';
+import '../../../core/services/conflict_check_service.dart';
 
 class FarmDiaryScreen extends ConsumerStatefulWidget {
   const FarmDiaryScreen({super.key});
@@ -131,6 +132,89 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (!formKey.currentState!.validate()) return;
+
+                        final smartContext = ref.read(smartContextProvider);
+                        final weather = smartContext.weather;
+                        final farmerProfile = ref.read(currentUserProvider).value;
+
+                        // Pre-Commit Conflict Check Engine
+                        final conflict = ConflictCheckService().evaluateDiaryActivityConflict(
+                          activityType: selectedActivity,
+                          rainProbability: weather != null ? weather.rainChance / 100.0 : 0.75, // Default test 75% for conflict demo
+                          windSpeed: weather?.windSpeed ?? 18.0,
+                          forecastCondition: weather?.condition ?? 'Rain',
+                        );
+
+                        if (conflict.hasConflict) {
+                          // Show Conflict Pre-Commit Dialog
+                          final bool? proceed = await showDialog<bool>(
+                            context: ctx,
+                            builder: (dialogCtx) => AlertDialog(
+                              backgroundColor: AppColors.surfaceObsidian,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.error, width: 1.5)),
+                              title: Row(
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 28),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: Text(conflict.title, style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
+                                ],
+                              ),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(conflict.reason, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: Colors.white.withOpacity(0.9))),
+                                  const SizedBox(height: 14),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(color: AppColors.surfaceObsidian, borderRadius: BorderRadius.circular(12)),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Rain Probability:', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white60)),
+                                            Text('${(conflict.rainProbability * 100).toStringAsFixed(0)}%', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.error)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Expected Time:', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white60)),
+                                            Text(conflict.expectedTime, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(dialogCtx, false),
+                                  child: const Text('REVISE ACTION'),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                                  onPressed: () => Navigator.pop(dialogCtx, true),
+                                  child: const Text('PROCEED ANYWAY'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (proceed != true) return;
+
+                          // Log Farmer Override to Firestore
+                          await ConflictCheckService().logConflictOverride(
+                            conflict: conflict,
+                            farmerName: farmerProfile?.name ?? 'Farmer Mitra',
+                            location: '${farmerProfile?.district ?? "Nashik"}, ${farmerProfile?.state ?? "Maharashtra"}',
+                            userReason: 'Farmer proceeded anyway after rain risk prompt',
+                          );
+                        }
+
                         final entry = FarmDiaryEntry(
                           id: const Uuid().v4(),
                           farmerId: farmerId,
@@ -142,7 +226,7 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
                           notes: notesController.text,
                         );
                         await ref.read(databaseServiceProvider).addDiaryEntry(entry);
-                        Navigator.pop(ctx);
+                        if (ctx.mounted) Navigator.pop(ctx);
                       },
                       child: const Text('SAVE ENTRY'),
                     ),

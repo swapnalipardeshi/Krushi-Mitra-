@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/home_screen.dart';
 import '../../govt_schemes/screens/schemes_list_screen.dart';
-import '../../market_prices/screens/market_prices_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../ai_doctor/screens/ai_doctor_screen.dart';
 import '../../weather/screens/weather_screen.dart';

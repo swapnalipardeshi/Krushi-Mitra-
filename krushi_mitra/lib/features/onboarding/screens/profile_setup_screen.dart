@@ -32,6 +32,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   final _storage = StorageService();
 
+  ImageProvider<Object>? _getProfileImage(String? profilePhotoUrl) {
+    if (_imageFile != null) {
+      return FileImage(_imageFile!);
+    }
+    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      return NetworkImage(profilePhotoUrl);
+    }
+    return null;
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
@@ -166,10 +176,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       ),
                       child: Text(
                         e.toString(),
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.robotoMono(
                           fontSize: 12,
                           color: AppColors.error,
-                          fontFamily: 'monospace',
                         ),
                       ),
                     ),
@@ -219,6 +228,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final existingProfile = ref.watch(currentUserProvider).value;
+    final profilePhotoUrl = existingProfile?.photoUrl;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -251,12 +262,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         ),
                         child: CircleAvatar(
                           backgroundColor: AppColors.surfaceObsidian,
-                          backgroundImage: (_imageFile != null 
-                            ? FileImage(_imageFile!) 
-                            : (existingProfile?.photoUrl != null && existingProfile!.photoUrl!.isNotEmpty
-                                ? NetworkImage(existingProfile!.photoUrl!) 
-                                : null)) as ImageProvider?,
-                          child: (_imageFile == null && (existingProfile?.photoUrl == null || existingProfile!.photoUrl!.isEmpty)) 
+                          backgroundImage: _getProfileImage(profilePhotoUrl),
+                          child: (_imageFile == null && (profilePhotoUrl == null || profilePhotoUrl.isEmpty)) 
                             ? Icon(Icons.person_rounded, size: 60, color: AppColors.textSecondary)
                             : null,
                         ),
@@ -367,7 +374,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget _buildStateDropdown() {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: 'Select State', prefixIcon: const Icon(Icons.map_outlined), filled: true, fillColor: AppColors.surfaceWhite),
-      value: _selectedState,
+      initialValue: _selectedState,
       items: _states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
       onChanged: (v) => setState(() => _selectedState = v),
     );
@@ -376,7 +383,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget _buildSoilDropdown() {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: 'Soil Type', prefixIcon: const Icon(Icons.terrain_rounded), filled: true, fillColor: AppColors.surfaceWhite),
-      value: _selectedSoilType,
+      initialValue: _selectedSoilType,
       items: _soilTypes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
       onChanged: (v) => setState(() => _selectedSoilType = v),
     );
@@ -385,7 +392,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget _buildIrrigationDropdown() {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: 'Irrigation Source', prefixIcon: const Icon(Icons.water_drop_rounded), filled: true, fillColor: AppColors.surfaceWhite),
-      value: _selectedIrrigation,
+      initialValue: _selectedIrrigation,
       items: _irrigationSources.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
       onChanged: (v) => setState(() => _selectedIrrigation = v),
     );

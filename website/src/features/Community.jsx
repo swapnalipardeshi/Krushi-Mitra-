@@ -1,8 +1,12 @@
-// 👥 Krushi Mitra Pro — Community Forum Feed
-import React, { useState } from 'react';
-import { MessageSquare, ThumbsUp, Plus, Search, Tag, User, Send } from 'lucide-react';
+// 👥 Krushi Mitra Pro — Community Forum Feed with Live Firestore Sync
+import React, { useState, useEffect } from 'react';
+import { MessageSquare, ThumbsUp, Plus, Search, Tag, User, Send, ShieldAlert } from 'lucide-react';
+import { db } from '../firebase/config';
+import { collection, onSnapshot, addDoc, doc, updateDoc, increment, serverTimestamp, query, orderBy } from 'firebase/firestore';
 
-export default function Community({ profile, communityPosts, setCommunityPosts }) {
+import { moderateContent } from '../services/ai';
+
+export default function Community({ profile, communityPosts = [], setCommunityPosts = () => {} }) {
   const [activeTab, setActiveTab] = useState('All');
   const [showAddPost, setShowAddPost] = useState(false);
   const [newPostText, setNewPostText] = useState('');
@@ -10,85 +14,156 @@ export default function Community({ profile, communityPosts, setCommunityPosts }
   const [newPostImage, setNewPostImage] = useState('');
   const [activeCommentId, setActiveCommentId] = useState(null);
   const [newCommentText, setNewCommentText] = useState('');
+  const [livePosts, setLivePosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [moderationWarning, setModerationWarning] = useState('');
 
-  const lang = profile.language || 'hi';
+  const lang = profile?.language || 'hi';
 
   const formatText = (textHi, textEn) => {
     return lang === 'hi' ? textHi : textEn;
   };
 
-  const handleAddPost = (e) => {
+  // Real-time Firestore sync
+  useEffect(() => {
+    try {
+      const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const postsData = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            author: data.authorName || data.author || 'Farmer Mitra',
+            location: data.authorLocation || data.location || 'India',
+            content: data.content || '',
+            tag: data.category || data.tag || 'General',
+            imageUrl: data.imageUrl || null,
+            likes: data.likes || 0,
+            isFlagged: data.isFlagged || false,
+            comments: data.comments || [],
+            date: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short' }) : 'Recently'
+          };
+        });
+        setLivePosts(postsData);
+        if (setCommunityPosts) setCommunityPosts(postsData);
+        setLoading(false);
+      }, (err) => {
+        console.warn('Firestore subscription error, using local state fallback:', err);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('Firebase init error:', e);
+      setLoading(false);
+    }
+  }, [lang]);
+
+  const displayPosts = livePosts.length > 0 ? livePosts : communityPosts;
+
+  const handleAddPost = async (e) => {
     e.preventDefault();
     if (!newPostText.trim()) return;
 
-    const newPost = {
-      id: `post_${Date.now()}`,
-      author: profile.name || 'Aditya Lohar',
-      location: `${profile.district || 'Nashik'}, ${profile.state || 'Maharashtra'}`,
+    setModerationWarning('');
+    
+    // AI Content Moderation & Auto-Categorization
+    const modResult = await moderateContent(newPostText.trim());
+    
+    if (modResult.isFlagged) {
+      setModerationWarning(`⚠️ Post Flagged by AI Moderation: ${modResult.reason}`);
+      return;
+    }
+
+    const finalTag = newPostTag === 'General' ? (modResult.category || 'General') : newPostTag;
+
+    const postPayload = {
+      authorName: profile.name || 'Farmer Mitra',
+      authorLocation: `${profile.district || 'Nashik'}, ${profile.state || 'Maharashtra'}`,
       content: newPostText.trim(),
-      tag: newPostTag,
+      category: finalTag,
       imageUrl: newPostImage || null,
       likes: 0,
       comments: [],
-      date: new Date().toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', {
-        day: 'numeric',
-        month: 'short'
-      })
+      isFlagged: false,
+      createdAt: serverTimestamp()
     };
 
-    const updated = [newPost, ...communityPosts];
-    setCommunityPosts(updated);
-    localStorage.setItem('krushi_community_posts', JSON.stringify(updated));
+    try {
+      await addDoc(collection(db, 'posts'), postPayload);
+    } catch (err) {
+      console.error('Firestore post create error:', err);
+      // Fallback local
+      const localPost = {
+        id: `post_${Date.now()}`,
+        author: postPayload.authorName,
+        location: postPayload.authorLocation,
+        content: postPayload.content,
+        tag: postPayload.category,
+        imageUrl: postPayload.imageUrl,
+        likes: 0,
+        comments: [],
+        date: 'Just now'
+      };
+      setCommunityPosts([localPost, ...displayPosts]);
+    }
 
-    // Reset fields
     setNewPostText('');
     setNewPostImage('');
     setNewPostTag('General');
     setShowAddPost(false);
   };
 
-  const handleLike = (id) => {
-    const updated = communityPosts.map(post => {
-      if (post.id === id) {
-        return { ...post, likes: post.likes + 1 };
-      }
-      return post;
-    });
-    setCommunityPosts(updated);
-    localStorage.setItem('krushi_community_posts', JSON.stringify(updated));
+  const handleLike = async (id) => {
+    try {
+      const postRef = doc(db, 'posts', id);
+      await updateDoc(postRef, { likes: increment(1) });
+    } catch (err) {
+      console.error('Firestore like error:', err);
+    }
   };
 
-  const handleAddComment = (postId) => {
+  const handleReportPost = async (id) => {
+    try {
+      const postRef = doc(db, 'posts', id);
+      await updateDoc(postRef, { isFlagged: true });
+      alert(formatText("पोस्ट की रिपोर्ट कर दी गई है। मॉडरेटर इसकी जांच करेंगे।", "Post flagged for moderator review."));
+    } catch (err) {
+      console.error('Report error:', err);
+    }
+  };
+
+  const handleAddComment = async (postId) => {
     if (!newCommentText.trim()) return;
+    const commentObj = {
+      id: Date.now().toString(),
+      author: profile.name || 'Farmer Mitra',
+      content: newCommentText.trim(),
+      date: 'Just now'
+    };
 
-    const updated = communityPosts.map(post => {
-      if (post.id === postId) {
-        const comments = post.comments || [];
-        const newComment = {
-          id: Date.now().toString(),
-          author: profile.name || 'Farmer Mitra',
-          content: newCommentText.trim(),
-          date: 'Just now'
-        };
-        return { ...post, comments: [...comments, newComment] };
-      }
-      return post;
-    });
+    const targetPost = displayPosts.find(p => p.id === postId);
+    if (!targetPost) return;
 
-    setCommunityPosts(updated);
-    localStorage.setItem('krushi_community_posts', JSON.stringify(updated));
+    const updatedComments = [...(targetPost.comments || []), commentObj];
+
+    try {
+      const postRef = doc(db, 'posts', postId);
+      await updateDoc(postRef, { comments: updatedComments });
+    } catch (err) {
+      console.error('Firestore comment error:', err);
+    }
     setNewCommentText('');
   };
 
   const tabs = ['All', 'Pests', 'Weather', 'Market', 'General'];
 
   const filteredPosts = activeTab === 'All' 
-    ? communityPosts 
-    : communityPosts.filter(post => post.tag.toLowerCase() === activeTab.toLowerCase());
+    ? displayPosts 
+    : displayPosts.filter(post => (post.tag || '').toLowerCase() === activeTab.toLowerCase());
 
   const getTagColor = (tag) => {
-    const t = tag.toLowerCase();
-    if (t === 'pests') return 'badge-danger';
+    const t = (tag || '').toLowerCase();
+    if (t === 'pests' || t === 'disease') return 'badge-danger';
     if (t === 'weather') return 'badge-cyan';
     if (t === 'market') return 'badge-amber';
     return 'badge-emerald';
@@ -136,15 +211,22 @@ export default function Community({ profile, communityPosts, setCommunityPosts }
         ))}
       </div>
 
-      {/* Main split */}
+      {/* Posts viewport */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        {/* New Post Creator Modal */}
+        {/* Modal */}
         {showAddPost && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div className="glass-panel animate-fade-in" style={{ background: 'var(--bg-surface)', width: '100%', maxWidth: '500px', padding: '24px', position: 'relative' }}>
               <button onClick={() => setShowAddPost(false)} className="btn-secondary" style={{ position: 'absolute', right: '16px', top: '16px', padding: '2px 8px', fontSize: '0.8rem' }}>✕</button>
               <h3 style={{ marginBottom: '16px', fontSize: '1.1rem' }}>✍️ {formatText("चर्चा पोस्ट साझा करें", "Share Post to Community")}</h3>
+              
+              {moderationWarning && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', padding: '10px 14px', color: '#f87171', fontSize: '0.82rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldAlert size={16} />
+                  <span>{moderationWarning}</span>
+                </div>
+              )}
               
               <form onSubmit={handleAddPost} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
@@ -185,12 +267,14 @@ export default function Community({ profile, communityPosts, setCommunityPosts }
           </div>
         )}
 
-        {/* Posts viewport */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {filteredPosts.map((post) => (
+        {filteredPosts.length === 0 ? (
+          <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            No posts found in this category yet. Be the first to start a discussion!
+          </div>
+        ) : (
+          filteredPosts.map((post) => (
             <div key={post.id} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               
-              {/* Post header info */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-surface-variant)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-emerald)' }}>
@@ -201,12 +285,20 @@ export default function Community({ profile, communityPosts, setCommunityPosts }
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>📍 {post.location} • {post.date}</span>
                   </div>
                 </div>
-                <span className={`badge ${getTagColor(post.tag)}`}>
-                  <Tag size={12} /> {post.tag}
-                </span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span className={`badge ${getTagColor(post.tag)}`}>
+                    <Tag size={12} /> {post.tag}
+                  </span>
+                  <button 
+                    onClick={() => handleReportPost(post.id)}
+                    title="Report / Flag Post"
+                    style={{ background: 'transparent', border: 'none', color: post.isFlagged ? '#ef4444' : 'var(--text-disabled)', cursor: 'pointer' }}
+                  >
+                    <ShieldAlert size={16} />
+                  </button>
+                </div>
               </div>
 
-              {/* Content */}
               <div>
                 <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
                   {post.content}
@@ -220,82 +312,54 @@ export default function Community({ profile, communityPosts, setCommunityPosts }
                 )}
               </div>
 
-              {/* Action indicators bar */}
               <div style={{ display: 'flex', gap: '20px', borderTop: '1px solid var(--border-outline)', paddingTop: '12px' }}>
                 <button 
                   onClick={() => handleLike(post.id)}
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', gap: '6px', alignItems: 'center', fontSize: '0.82rem' }}
-                  onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary-emerald)'}
-                  onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
                   <ThumbsUp size={16} /> {post.likes} {formatText("पसंद", "Likes")}
                 </button>
                 <button 
                   onClick={() => setActiveCommentId(activeCommentId === post.id ? null : post.id)}
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', gap: '6px', alignItems: 'center', fontSize: '0.82rem' }}
-                  onMouseOver={(e) => e.currentTarget.style.color = 'var(--secondary-cyan)'}
-                  onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
                   <MessageSquare size={16} /> {post.comments?.length || 0} {formatText("टिप्पणी", "Comments")}
                 </button>
               </div>
 
-              {/* Comments box toggle section */}
               {activeCommentId === post.id && (
                 <div style={{ background: 'rgba(2, 6, 23, 0.2)', border: '1px solid var(--glass-border)', padding: '16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  
-                  {/* List comments */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxH: '180px', overflowY: 'auto' }}>
-                    {(post.comments || []).map((comm) => (
-                      <div key={comm.id} style={{ fontSize: '0.82rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--glass-border)', padding: '8px 12px', borderRadius: '6px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                    {(post.comments || []).map((comm, cIdx) => (
+                      <div key={comm.id || cIdx} style={{ fontSize: '0.82rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--glass-border)', padding: '8px 12px', borderRadius: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.74rem', marginBottom: '2px' }}>
                           <span style={{ fontWeight: '600' }}>{comm.author}</span>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{comm.date}</span>
+                          <span>{comm.date}</span>
                         </div>
                         <p>{comm.content}</p>
                       </div>
                     ))}
-                    {(post.comments || []).length === 0 && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                        No comments yet. Write the first response!
-                      </p>
-                    )}
                   </div>
-
-                  {/* Add comment form */}
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
                     <input 
                       type="text" 
-                      placeholder={formatText("टिप्पणी लिखें...", "Write a helpful reply...")}
+                      placeholder={formatText("अपनी टिप्पणी लिखें...", "Write a comment...")}
                       value={newCommentText}
                       onChange={(e) => setNewCommentText(e.target.value)}
                       className="form-input"
                       style={{ padding: '8px 12px', fontSize: '0.82rem' }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
                     />
-                    <button 
-                      onClick={() => handleAddComment(post.id)} 
-                      className="btn-primary" 
-                      style={{ padding: '8px' }}
-                    >
+                    <button onClick={() => handleAddComment(post.id)} className="btn-primary" style={{ padding: '8px 14px' }}>
                       <Send size={14} />
                     </button>
                   </div>
-
                 </div>
               )}
 
             </div>
-          ))}
-          {filteredPosts.length === 0 && (
-            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '40px' }}>
-              No discussions under this category yet.
-            </p>
-          )}
-        </div>
-
+          ))
+        )}
       </div>
-
     </div>
   );
 }

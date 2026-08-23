@@ -41,6 +41,11 @@ class GeminiService {
 
   String get _currentModel => _modelFallbacks[_currentModelIndex % _modelFallbacks.length];
 
+  String get currentApiKey {
+    if (_apiKeys.isEmpty) initialize();
+    return _apiKeys.isNotEmpty ? _apiKeys[_currentKeyIndex % _apiKeys.length] : '';
+  }
+
   GenerativeModel getModel({String? modelName, String? systemPrompt}) {
     if (_apiKeys.isEmpty) initialize();
     
