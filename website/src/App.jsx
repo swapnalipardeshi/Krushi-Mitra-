@@ -157,7 +157,7 @@ const DEFAULT_PROFILE = {
   soilType: 'Black Clayey',
   irrigationSource: 'Drip Irrigation',
   language: 'hi',
-  apiKey: '',
+  apiKey: import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '',
   avatar: null
 };
 

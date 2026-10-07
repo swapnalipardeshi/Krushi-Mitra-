@@ -63,3 +63,25 @@ export const fewShotExamples = [
 2. **रासायनिक उपचार**: **Mancozeb 75 WP (Dithane M-45)** 2.5 ग्राम प्रति लीटर पानी में मिलाकर छिड़काव करें।`
   }
 ];
+
+export function getKnowledgeBrief(crops = []) {
+  if (!Array.isArray(crops) || crops.length === 0) {
+    return 'General crop guidance: focus on soil health, timely irrigation, and pest monitoring.';
+  }
+
+  const uniqueCrops = [...new Set(crops.map(c => String(c).trim()).filter(Boolean))];
+  const cropSummary = uniqueCrops.map(crop => `${crop} requires timely monitoring of pests, irrigation, and nutrient balance.`).join(' ');
+  return `Crop knowledge for ${uniqueCrops.join(', ')}: ${cropSummary}`;
+}
+
+export function getOfflineAdvice(query = '', crops = [], district = '') {
+  const cropNames = Array.isArray(crops) && crops.length ? crops.join(', ') : 'your crop';
+  const locationHint = district ? ` in ${district}` : '';
+  return `Krushi Mitra suggests:\n\n- Check soil moisture and field drainage first.\n- Observe whether the issue is pest, disease, or nutrient stress.\n- For ${cropNames}${locationHint}, prioritize early action in the morning or evening.\n- Use neem-based sprays or locally available safe options for initial treatment.\n\nQuestion: ${query || 'Need seasonal field advice.'}`;
+}
+
+export function getFewShotContext() {
+  return fewShotExamples
+    .map(example => `User Query: ${example.query}\nExpert Advice: ${example.response}`)
+    .join('\n\n');
+}

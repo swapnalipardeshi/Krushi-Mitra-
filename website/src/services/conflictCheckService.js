@@ -59,17 +59,40 @@ export function evaluateDiaryActivityConflict({ activityType, rainProbability = 
   };
 }
 
-export async function logConflictOverride({ conflict, farmerName = 'Farmer Mitra', location = 'Nashik', userReason = '' }) {
+export function checkDiaryActivityConflict(activity, date, weather = {}) {
+  const activityType = typeof activity === 'string' ? activity : activity || '';
+  const rainChance = Number(weather?.rainChance ?? weather?.rainProbability ?? 0);
+  const rainProbability = rainChance > 1 ? rainChance / 100 : rainChance;
+  const forecastCondition = weather?.condition || weather?.forecastCondition || 'Clear';
+  return evaluateDiaryActivityConflict({ activityType, rainProbability, windSpeed: weather?.windSpeed ?? 0, forecastCondition });
+}
+
+export async function logConflictOverride(...args) {
+  let payload = {};
+  if (args[0] && typeof args[0] === 'object' && !Array.isArray(args[0])) {
+    payload = args[0];
+  } else {
+    payload = {
+      farmerName: args[0] || 'Farmer Mitra',
+      location: args[1] || 'Nashik',
+      activityType: args[2] || '',
+      conflictTitle: args[3] || '',
+      rainProbability: args[4] || 0,
+      userReason: args[5] || 'Farmer selected proceed anyway',
+    };
+  }
+
   try {
+    const { conflict, farmerName = 'Farmer Mitra', location = 'Nashik', userReason = '' } = payload;
     await addDoc(collection(db, 'conflict_audit_logs'), {
       farmerName,
       location,
-      activityType: conflict.activityType,
-      conflictTitle: conflict.title,
-      conflictReason: conflict.reason,
-      rainProbability: conflict.rainProbability,
-      userReason: userReason || 'Farmer selected proceed anyway',
-      rawInputs: conflict.rawInputs,
+      activityType: conflict?.activityType || payload.activityType || 'Unknown activity',
+      conflictTitle: conflict?.title || payload.conflictTitle || 'Conflict',
+      conflictReason: conflict?.reason || payload.conflictReason || '',
+      rainProbability: conflict?.rainProbability ?? payload.rainProbability ?? 0,
+      userReason: userReason || payload.userReason || 'Farmer selected proceed anyway',
+      rawInputs: conflict?.rawInputs || payload.rawInputs || {},
       overrideTimestamp: serverTimestamp()
     });
     console.log('✅ Conflict override logged to Firestore conflict_audit_logs');
@@ -78,7 +101,13 @@ export async function logConflictOverride({ conflict, farmerName = 'Farmer Mitra
   }
 }
 
-export function checkCalendarSoilConflict({ scheduledAction, soilReport }) {
+export function checkCalendarSoilConflict(taskText, soilReport) {
+  return checkCalendarSoilConflictCompat({ scheduledAction: taskText, soilReport });
+}
+
+export const checkSoilCalendarConflict = checkCalendarSoilConflict;
+
+export function checkCalendarSoilConflictCompat({ scheduledAction, soilReport }) {
   if (!soilReport) return { hasConflict: false, reason: 'No recent soil report available.' };
 
   const lowerAction = (scheduledAction || '').toLowerCase();

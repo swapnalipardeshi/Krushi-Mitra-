@@ -109,20 +109,18 @@ function extractJson(text) {
 
 // Global helper to execute Gemini API calls directly from frontend
 async function callGemini(prompt, apiKey, systemInstruction = null) {
-  if (!apiKey) {
+  const resolvedApiKey = apiKey || import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  if (!resolvedApiKey) {
     throw new Error('API_KEY_MISSING');
   }
-  
-  const model = "gemini-1.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-  
-  const contents = [
-    {
-      role: 'user',
-      parts: [{ text: prompt }]
-    }
-  ];
 
+  const isGroq = resolvedApiKey.startsWith('gsk_');
+  const model = "gemini-1.5-flash";
+  const url = isGroq
+    ? 'https://api.groq.com/openai/v1/chat/completions'
+    : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${resolvedApiKey}`;
+
+  const contents = [{ role: 'user', parts: [{ text: prompt }] }];
   const requestBody = { contents };
 
   if (systemInstruction) {
@@ -133,26 +131,42 @@ async function callGemini(prompt, apiKey, systemInstruction = null) {
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody)
+    headers: isGroq
+      ? {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${resolvedApiKey}`
+        }
+      : { 'Content-Type': 'application/json' },
+    body: JSON.stringify(isGroq ? {
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemInstruction || SYSTEM_PROMPT },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    } : requestBody)
   });
 
   if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err?.error?.message || `HTTP ${response.status}`);
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || err?.message || `HTTP ${response.status}`);
   }
 
   const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = isGroq
+    ? data.choices?.[0]?.message?.content
+    : data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
-    throw new Error("No response content from Gemini.");
+    throw new Error(isGroq ? 'No response content from Groq.' : 'No response content from Gemini.');
   }
   return text;
 }
 
 // ─── CHATBOT ───
 export async function chat(history, userMessage, context, apiKey) {
-  if (!apiKey) {
+  const resolvedApiKey = apiKey || import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  if (!resolvedApiKey) {
     // Revert to high-fidelity offline expert rules
     return getOfflineAdvice(userMessage, context.profile?.cropsGrown || [], context.profile?.district || '');
   }
@@ -176,7 +190,7 @@ ${langInst}
 
 Provide your expert response:`;
 
-    return await callGemini(fullPrompt, apiKey, SYSTEM_PROMPT);
+    return await callGemini(fullPrompt, resolvedApiKey, SYSTEM_PROMPT);
   } catch (error) {
     console.error("AI Chat Error:", error);
     return `⚠️ AI Error: ${error.message}. Running local expert database fallback:\n\n` + 
@@ -185,8 +199,80 @@ Provide your expert response:`;
 }
 
 // ─── CROP DOCTOR ───
-export async function analyzeCropImage(base64Data, mimeType, context, apiKey) {
-  if (!apiKey) {
+export async function analyzeCropImage(base64DataOrImage, mimeTypeOrCropHint, contextOrApiKey, maybeApiKeyOrContext) {
+  const resolvedApiKey = (() => {
+    const envKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
+    if (typeof contextOrApiKey === 'string' && contextOrApiKey.trim()) return contextOrApiKey.trim();
+    if (typeof maybeApiKeyOrContext === 'string' && maybeApiKeyOrContext.trim()) return maybeApiKeyOrContext.trim();
+    if (typeof contextOrApiKey === 'object' && contextOrApiKey !== null && Object.prototype.hasOwnProperty.call(contextOrApiKey, 'apiKey')) {
+      return String(contextOrApiKey.apiKey || '').trim();
+    }
+    return envKey.trim();
+  })();
+
+  if (typeof mimeTypeOrCropHint === 'string' && !mimeTypeOrCropHint.includes('/') && !mimeTypeOrCropHint.startsWith('image')) {
+    const cropHint = mimeTypeOrCropHint || 'Crop';
+    if (!resolvedApiKey) {
+      return {
+        cropName: cropHint,
+        diseaseName: 'Offline Knowledge Mode',
+        severity: 'Moderate',
+        confidencePercent: 75,
+        symptoms: 'Leaf showing signs of spotting and nutrient stress.',
+        causes: 'Common fungal spores or localized nutrient imbalance.',
+        treatmentOrganic: 'Spray 5ml Neem Oil per liter of water during evening hours.',
+        treatmentChemical: 'Apply Mancozeb 75 WP @ 2g/L if symptoms expand.',
+        prevention: 'Maintain balanced field moisture and practice crop rotation.'
+      };
+    }
+
+    try {
+      const prompt = `You are a plant pathologist specializing in Indian crops. Analyze this crop photo hint: "${cropHint}".
+Return JSON ONLY:
+{
+  "crop_name": "${cropHint}",
+  "health_status": "diseased",
+  "disease_name": "Identified Disease Name",
+  "severity": "Medium",
+  "confidence": 88,
+  "symptoms": "Detailed visual symptoms",
+  "causes": "Environmental/pathogen causes",
+  "treatment_organic": "Specific organic remedy with dosage",
+  "treatment_chemical": "Specific chemical remedy with dosage and Indian brand name",
+  "prevention": "3 prevention tips"
+}`;
+      const raw = await callGemini(prompt, resolvedApiKey, SYSTEM_PROMPT);
+      const parsed = JSON.parse(extractJson(raw));
+      return {
+        cropName: parsed.crop_name || cropHint,
+        diseaseName: parsed.disease_name || 'Healthy / No major disease',
+        severity: parsed.severity || 'Low',
+        confidencePercent: parsed.confidence || 80,
+        symptoms: parsed.symptoms || '',
+        causes: parsed.causes || '',
+        treatmentOrganic: parsed.treatment_organic || '',
+        treatmentChemical: parsed.treatment_chemical || '',
+        prevention: parsed.prevention || ''
+      };
+    } catch (err) {
+      console.error("Vision Analysis Error:", err);
+      return {
+        cropName: cropHint,
+        diseaseName: 'Service Interrupted',
+        severity: 'Low',
+        confidencePercent: 0,
+        symptoms: 'Could not connect to vision diagnosis engine.',
+        causes: 'Check internet connection.',
+        treatmentOrganic: 'Use 5ml Neem Oil per liter water.',
+        treatmentChemical: 'Consult local Krishi Kendra.',
+        prevention: 'Keep fields clean and properly drained.'
+      };
+    }
+  }
+
+  const context = typeof contextOrApiKey === 'object' && contextOrApiKey !== null ? contextOrApiKey : {};
+  const mimeType = typeof mimeTypeOrCropHint === 'string' ? mimeTypeOrCropHint : 'image/jpeg';
+  if (!resolvedApiKey) {
     return simulateImageAnalysis(context);
   }
 
@@ -221,7 +307,7 @@ Respond ONLY in valid JSON (no markdown, no backticks):
   "prevention": "3-4 specific preventive measures for future seasons"
 }`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${resolvedApiKey}`;
     const requestBody = {
       contents: [
         {
@@ -229,7 +315,7 @@ Respond ONLY in valid JSON (no markdown, no backticks):
             {
               inlineData: {
                 mimeType: mimeType,
-                data: base64Data
+                data: base64DataOrImage
               }
             },
             { text: prompt }
@@ -647,66 +733,6 @@ Respond ONLY in JSON format:
   } catch (err) {
     console.warn("AI Moderation Fallback:", err);
     return { isFlagged: false, category: detectedCategory, reason: '' };
-  }
-}
-
-// ─── 2. CROP DISEASE DIAGNOSIS (VISION MODEL) ───
-export async function analyzeCropImage(base64Image, cropHint = 'Crop', apiKey = null) {
-  if (!apiKey) {
-    return {
-      cropName: cropHint,
-      diseaseName: 'Offline Knowledge Mode',
-      severity: 'Moderate',
-      confidencePercent: 75,
-      symptoms: 'Leaf showing signs of spotting and nutrient stress.',
-      causes: 'Common fungal spores or localized nutrient imbalance.',
-      treatmentOrganic: 'Spray 5ml Neem Oil per liter of water during evening hours.',
-      treatmentChemical: 'Apply Mancozeb 75 WP @ 2g/L if symptoms expand.',
-      prevention: 'Maintain balanced field moisture and practice crop rotation.'
-    };
-  }
-
-  try {
-    const prompt = `You are a plant pathologist specializing in Indian crops. Analyze this crop photo hint: "${cropHint}".
-Return JSON ONLY:
-{
-  "crop_name": "${cropHint}",
-  "health_status": "diseased",
-  "disease_name": "Identified Disease Name",
-  "severity": "Medium",
-  "confidence": 88,
-  "symptoms": "Detailed visual symptoms",
-  "causes": "Environmental/pathogen causes",
-  "treatment_organic": "Specific organic remedy with dosage",
-  "treatment_chemical": "Specific chemical remedy with dosage and Indian brand name",
-  "prevention": "3 prevention tips"
-}`;
-    const raw = await callGemini(prompt, apiKey, SYSTEM_PROMPT);
-    const parsed = JSON.parse(extractJson(raw));
-    return {
-      cropName: parsed.crop_name || cropHint,
-      diseaseName: parsed.disease_name || 'Healthy / No major disease',
-      severity: parsed.severity || 'Low',
-      confidencePercent: parsed.confidence || 80,
-      symptoms: parsed.symptoms || '',
-      causes: parsed.causes || '',
-      treatmentOrganic: parsed.treatment_organic || '',
-      treatmentChemical: parsed.treatment_chemical || '',
-      prevention: parsed.prevention || ''
-    };
-  } catch (err) {
-    console.error("Vision Analysis Error:", err);
-    return {
-      cropName: cropHint,
-      diseaseName: 'Service Interrupted',
-      severity: 'Low',
-      confidencePercent: 0,
-      symptoms: 'Could not connect to vision diagnosis engine.',
-      causes: 'Check internet connection.',
-      treatmentOrganic: 'Use 5ml Neem Oil per liter water.',
-      treatmentChemical: 'Consult local Krishi Kendra.',
-      prevention: 'Keep fields clean and properly drained.'
-    };
   }
 }
 
