@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -27,7 +28,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   bool _isOtpSent = false;
   bool _isLoading = false;
   bool _passwordVisible = false;
-  String _verificationId = '';
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -74,17 +74,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       final auth = ref.read(authServiceProvider);
       if (_isPhoneLogin) {
         if (!_isOtpSent) {
-          await _sendOtp();
+          final phone = _phoneController.text.trim();
+          final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
+          await Supabase.instance.client.auth.signInWithOtp(phone: formattedPhone);
+          setState(() => _isOtpSent = true);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Verification code sent to $formattedPhone'),
+              backgroundColor: AppColors.primaryEmerald,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ));
+          }
         } else {
-          await _verifyOtp();
+          final phone = _phoneController.text.trim();
+          final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
+          await Supabase.instance.client.auth.verifyOTP(
+            phone: formattedPhone,
+            token: _otpController.text.trim(),
+            type: OtpType.sms,
+          );
+          _navigateToHome();
         }
       } else {
         if (_isLogin) {
-          await auth.signInWithEmail(_emailController.text.trim(), _passwordController.text);
+          await auth.signInWithEmail(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
         } else {
-          final cred = await auth.signUpWithEmail(_emailController.text.trim(), _passwordController.text);
-          if (cred?.user != null && _nameController.text.trim().isNotEmpty) {
-            await cred!.user!.updateDisplayName(_nameController.text.trim());
+          await auth.signUpWithEmail(
+            _emailController.text.trim(),
+            _passwordController.text,
+            fullName: _nameController.text.trim(),
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: const Text('Account created! Please check your email for verification link if enabled.'),
+              backgroundColor: AppColors.primaryEmerald,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ));
           }
         }
         _navigateToHome();
@@ -107,77 +137,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     }
   }
 
-  Future<void> _sendOtp() async {
-    final phoneNumber = _phoneController.text.trim();
-    final fullNumber = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
-    
-    final completer = Completer<void>();
-
-    try {
-      await ref.read(authServiceProvider).verifyPhoneNumber(
-        phoneNumber: fullNumber,
-        onCodeSent: (verificationId) {
-          if (mounted) {
-            setState(() { _verificationId = verificationId; _isOtpSent = true; });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('OTP sent to $fullNumber'), backgroundColor: AppColors.primaryEmerald, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            );
-          }
-          if (!completer.isCompleted) completer.complete();
-        },
-        onVerificationFailed: (e) {
-          if (mounted) {
-            String msg = e.message ?? 'Verification failed';
-            if (e.code == 'app-not-authorized') {
-              msg = 'App not authorized. Ensure SHA-1/SHA-256 keys are in Firebase Console.';
-            } else if (e.code == 'invalid-phone-number') {
-              msg = 'Invalid phone number format.';
-            } else if (e.code == 'too-many-requests') {
-              msg = 'Quota exceeded or SMS blocked. Check SMS region policy in Firebase.';
-            }
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Failed: $msg', style: GoogleFonts.plusJakartaSans(fontSize: 13)), 
-              backgroundColor: AppColors.error, 
-              duration: const Duration(seconds: 6),
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(label: 'Details', textColor: Colors.white, onPressed: () {}),
-            ));
-          }
-          if (!completer.isCompleted) completer.completeError(e);
-        },
-      );
-      
-      // Wait for either onCodeSent or onVerificationFailed to complete
-      await completer.future;
-    } catch (e) {
-      rethrow; // Let the _handleAuth try-catch block handle it
-    }
-  }
-
-  Future<void> _verifyOtp() async {
-    await ref.read(authServiceProvider).signInWithPhoneNumber(_verificationId, _otpController.text.trim());
-    _navigateToHome();
-  }
-
   Future<void> _handleGoogleLogin() async {
     setState(() => _isLoading = true);
     try {
-      final credential = await ref.read(authServiceProvider).signInWithGoogle();
-      if (credential != null) _navigateToHome();
+      await ref.read(authServiceProvider).signInWithGoogle();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyError(e.toString())), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_friendlyError(e.toString())),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  void _handleGuestLogin() {
+    ref.read(currentUserProvider.notifier).enterAsGuest();
+    _navigateToHome();
+  }
+
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Enter your email first', style: GoogleFonts.plusJakartaSans()), backgroundColor: AppColors.warning, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        SnackBar(
+          content: Text('Enter your registered email address first', style: GoogleFonts.plusJakartaSans()),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
@@ -186,9 +178,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Reset link sent to $email. Please check your Inbox and Spam folder.'), 
-            backgroundColor: AppColors.primaryEmerald, 
-            behavior: SnackBarBehavior.floating, 
+            content: Text('Reset link sent to $email. Please check your inbox.'),
+            backgroundColor: AppColors.primaryEmerald,
+            behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             duration: const Duration(seconds: 5),
           ),
@@ -196,10 +188,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Failed to send reset link. Ensure the email is registered.'), 
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_friendlyError(e.toString())),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ));
       }
     }
@@ -210,16 +203,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   }
 
   String _friendlyError(String error) {
-    if (error.contains('user-not-found')) return 'No account found with this email.';
-    if (error.contains('wrong-password')) return 'Incorrect password. Please try again.';
-    if (error.contains('email-already-in-use')) return 'This email is already registered. Try logging in.';
-    if (error.contains('invalid-phone-number')) return 'Please enter a valid phone number.';
-    if (error.contains('invalid-verification-code')) return 'Invalid OTP. Please check and try again.';
-    if (error.contains('weak-password')) return 'Password is too weak. Use at least 6 characters.';
-    if (error.contains('invalid-email')) return 'Please enter a valid email address.';
-    if (error.contains('too-many-requests')) return 'Too many attempts. Please wait and try again.';
-    if (error.contains('network-request-failed')) return 'Network error. Check your internet connection.';
-    return 'Something went wrong. Please try again.';
+    final lower = error.toLowerCase();
+    if (lower.contains('invalid login credentials') || lower.contains('invalid_credentials')) {
+      return 'Incorrect email or password. Please try again.';
+    }
+    if (lower.contains('user already registered') || lower.contains('user_already_exists')) {
+      return 'This email is already registered. Please sign in instead.';
+    }
+    if (lower.contains('weak_password') || lower.contains('password should be at least')) {
+      return 'Password is too weak. Please use at least 6 characters.';
+    }
+    if (lower.contains('rate limit') || lower.contains('over_request_rate_limit')) {
+      return 'Too many attempts. Please wait a minute and try again.';
+    }
+    if (lower.contains('socketexception') || lower.contains('network') || lower.contains('failed host lookup')) {
+      return 'Network connection issue. Please check your internet connection.';
+    }
+    return 'Authentication notice: ${error.replaceAll(RegExp(r'Exception: |AuthException: '), '')}';
   }
 
   int get _passwordStrength {
@@ -283,7 +283,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           Text(
                             _isPhoneLogin
                                 ? (_isOtpSent ? 'Enter the 6-digit code sent to your phone' : 'We\'ll send you a verification code')
-                                : (_isLogin ? 'Welcome back to your farming companion' : 'Start your smart farming journey'),
+                                : (_isLogin ? 'Welcome back to your farming companion' : 'Start your smart farming journey with Supabase'),
                             style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
                             textAlign: TextAlign.center,
                           ),
@@ -327,7 +327,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           // Divider
                           _buildDivider(),
                           const SizedBox(height: 20),
-                          // Social buttons
+                          // Guest Login Button
+                          _buildGuestButton(),
+                          const SizedBox(height: 12),
+                          // Social / phone buttons
                           _buildGoogleButton(),
                           const SizedBox(height: 12),
                           _buildPhoneToggleButton(),
@@ -533,6 +536,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
         ),
         Expanded(child: Divider(color: AppColors.outline.withValues(alpha: 0.5))),
       ],
+    );
+  }
+
+  Widget _buildGuestButton() {
+    return _socialButton(
+      onTap: _handleGuestLogin,
+      icon: const Icon(Icons.nature_people_rounded, color: AppColors.primaryEmerald, size: 22),
+      label: 'Explore as Guest',
     );
   }
 

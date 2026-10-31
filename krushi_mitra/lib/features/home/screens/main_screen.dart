@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../screens/home_screen.dart';
 import '../../govt_schemes/screens/schemes_list_screen.dart';
 import '../../profile/screens/profile_screen.dart';
@@ -8,7 +7,6 @@ import '../../ai_doctor/screens/ai_doctor_screen.dart';
 import '../../weather/screens/weather_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../onboarding/screens/profile_setup_screen.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
 
@@ -46,62 +44,19 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const LoadingWidget(message: 'Syncing your farm data...'),
-              const SizedBox(height: 32),
-              Text(
-                'Taking longer than usual?',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 12),
+              const LoadingWidget(message: 'Starting Krushi Mitra...'),
+              const SizedBox(height: 24),
               TextButton(
                 onPressed: () => setState(() => _forceStarted = true),
-                child: const Text('Enter as Guest'),
+                child: const Text('Enter App Now'),
               ),
             ],
           ),
         ),
       ),
-      error: (err, stack) => Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.error),
-                const SizedBox(height: 24),
-                Text('Connection Issue', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                Text(
-                  'We couldn\'t sync your profile. You can continue as a guest or try again.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, height: 1.5),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () => ref.refresh(currentUserProvider),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryEmerald,
-                    minimumSize: const Size(200, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Try Again'),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => setState(() => _forceStarted = true),
-                  child: const Text('Continue as Guest'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      // Resilient: In case of error, never block the farmer - go straight to dashboard
+      error: (err, stack) => _buildMainScaffold(null),
       data: (profile) {
-        final user = ref.read(authServiceProvider).currentUser;
-        if (profile == null && user != null && !user.isAnonymous) {
-          return const ProfileSetupScreen();
-        }
         return _buildMainScaffold(profile);
       },
     );

@@ -1,158 +1,125 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
-  FirebaseAuth get _auth {
+  SupabaseClient get _supabase {
     try {
-      return FirebaseAuth.instance;
+      return Supabase.instance.client;
     } catch (e) {
-      debugPrint("FATAL: FirebaseAuth.instance accessed before initialization: $e");
-      rethrow;
-    }
-  }
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-
-  // Stream of auth state changes
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  // Get current user
-  User? get currentUser => _auth.currentUser;
-
-  // Sign in with Google
-  Future<UserCredential?> signInWithGoogle() async {
-    try {
-      debugPrint("Starting Google Sign-In...");
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        debugPrint("Google Sign-In: User cancelled the flow.");
-        return null; // User cancelled
-      }
-
-      debugPrint("Google Sign-In: Getting authentication details...");
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      debugPrint("Google Sign-In: Creating Firebase credential...");
-      // Create a new credential
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      debugPrint("Google Sign-In: Signing into Firebase...");
-      // Once signed in, return the UserCredential
-      final userCredential = await _auth.signInWithCredential(credential);
-      debugPrint("Google Sign-In: Success for ${userCredential.user?.email}");
-      return userCredential;
-    } catch (e) {
-      debugPrint("FATAL Google Auth Error: $e");
-      if (e.toString().contains('7:')) {
-        debugPrint("HINT: Error 7 usually means a network issue or missing SHA-1 in Firebase Console.");
-      } else if (e.toString().contains('10:')) {
-        debugPrint("HINT: Error 10 usually means a developer error (check SHA-1 or package name).");
-      } else if (e.toString().contains('12500')) {
-        debugPrint("HINT: Error 12500 usually means an internal error (check SHA-1 or google-services.json).");
-      }
+      debugPrint("AuthService: Supabase is not initialized: $e");
       rethrow;
     }
   }
 
-  // Sign in with email and password
-  Future<UserCredential?> signInWithEmail(String email, String password) async {
+  // Current session & user
+  Session? get currentSession {
     try {
-      return await _auth.signInWithEmailAndPassword(
-        email: email,
+      return _supabase.auth.currentSession;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  User? get currentUser {
+    try {
+      return _supabase.auth.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Stream of auth state changes (User? stream)
+  Stream<User?> get authStateChanges {
+    try {
+      return _supabase.auth.onAuthStateChange.map((event) => event.session?.user);
+    } catch (e) {
+      debugPrint("AuthService: authStateChanges stream error: $e");
+      return const Stream.empty();
+    }
+  }
+
+  // Sign in with Email and Password
+  Future<AuthResponse> signInWithEmail(String email, String password) async {
+    try {
+      final response = await _supabase.auth.signInWithPassword(
+        email: email.trim(),
         password: password,
       );
+      debugPrint("Supabase Auth: Signed in as ${response.user?.email}");
+      return response;
     } catch (e) {
-      debugPrint("Auth Error: $e");
+      debugPrint("Supabase SignIn Error: $e");
       rethrow;
     }
   }
 
-  // Sign up with email and password
-  Future<UserCredential?> signUpWithEmail(String email, String password) async {
-    try {
-      return await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } catch (e) {
-      debugPrint("Auth Error: $e");
-      rethrow;
-    }
-  }
-
-  // Phone Authentication: Step 1 - Send OTP
-  Future<void> verifyPhoneNumber({
-    required String phoneNumber,
-    required Function(String verificationId) onCodeSent,
-    required Function(FirebaseAuthException e) onVerificationFailed,
+  // Sign up with Email and Password
+  Future<AuthResponse> signUpWithEmail(
+    String email,
+    String password, {
+    String? fullName,
   }) async {
     try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Auto-verification (rarely happens on all devices)
-          await _auth.signInWithCredential(credential);
-        },
-        verificationFailed: onVerificationFailed,
-        codeSent: (String verificationId, int? resendToken) {
-          onCodeSent(verificationId);
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {},
+      final response = await _supabase.auth.signUp(
+        email: email.trim(),
+        password: password,
+        data: fullName != null && fullName.isNotEmpty
+            ? {'full_name': fullName.trim()}
+            : null,
       );
+      debugPrint("Supabase Auth: Signed up user ${response.user?.email}");
+      return response;
     } catch (e) {
-      debugPrint("Phone Auth Error: $e");
+      debugPrint("Supabase SignUp Error: $e");
       rethrow;
     }
   }
 
-  // Phone Authentication: Step 2 - Sign in with OTP
-  Future<UserCredential> signInWithPhoneNumber(
-    String verificationId,
-    String smsCode,
-  ) async {
-    try {
-      final AuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-      return await _auth.signInWithCredential(credential);
-    } catch (e) {
-      debugPrint("Phone Sign-in Error: $e");
-      rethrow;
-    }
-  }
-
-  // Sign out
-  Future<void> signOut() async {
-    await _auth.signOut();
-    try {
-      await _googleSignIn.signOut();
-      await _googleSignIn.disconnect();
-    } catch (_) {}
-  }
-
-  // Guest Sign In (Anonymous Auth)
-  Future<UserCredential?> signInAnonymously() async {
-    try {
-      return await _auth.signInAnonymously();
-    } catch (e) {
-      debugPrint("Auth Error: $e");
-      rethrow;
-    }
-  }
-
-  // Password reset
+  // Send Password Reset Email
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      await _supabase.auth.resetPasswordForEmail(email.trim());
+      debugPrint("Supabase Auth: Password reset email dispatched to $email");
     } catch (e) {
-      debugPrint("Auth Error: $e");
+      debugPrint("Supabase Reset Password Error: $e");
       rethrow;
+    }
+  }
+
+  // Sign Out
+  Future<void> signOut() async {
+    try {
+      await _supabase.auth.signOut();
+      debugPrint("Supabase Auth: User signed out successfully");
+    } catch (e) {
+      debugPrint("Supabase SignOut Error: $e");
+      rethrow;
+    }
+  }
+
+  // Google OAuth via Supabase
+  Future<bool> signInWithGoogle() async {
+    try {
+      return await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'krushimitra://login-callback/',
+      );
+    } catch (e) {
+      debugPrint("Supabase Google Auth Error: $e");
+      rethrow;
+    }
+  }
+
+  // Sign in Anonymously / Guest Session
+  Future<AuthResponse?> signInAnonymously() async {
+    try {
+      final res = await _supabase.auth.signInAnonymously();
+      debugPrint("Supabase Auth: Guest session started (${res.user?.id})");
+      return res;
+    } catch (e) {
+      debugPrint("Supabase Anonymous Sign-in Notice: $e");
+      return null;
     }
   }
 }

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class MarketplaceListing {
   final String id;
   final String sellerId;
@@ -44,7 +42,6 @@ class MarketplaceListing {
   });
 
   factory MarketplaceListing.fromJson(Map<String, dynamic> json) {
-    // Robust helper for parsing numbers safely
     double parseDouble(dynamic v) {
       if (v == null) return 0.0;
       if (v is num) return v.toDouble();
@@ -52,7 +49,6 @@ class MarketplaceListing {
       return 0.0;
     }
 
-    // Robust helper for parsing booleans safely
     bool parseBool(dynamic v, bool fallback) {
       if (v == null) return fallback;
       if (v is bool) return v;
@@ -61,28 +57,33 @@ class MarketplaceListing {
       return fallback;
     }
 
+    DateTime parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      if (v is DateTime) return v;
+      if (v is String) return DateTime.tryParse(v) ?? DateTime.now();
+      return DateTime.now();
+    }
+
     return MarketplaceListing(
-      id: json['id']?.toString() ?? '',
-      sellerId: json['sellerId']?.toString() ?? '',
-      farmerName: json['farmerName']?.toString() ?? 'Unknown Farmer',
-      commodity: json['commodity']?.toString() ?? '',
+      id: (json['id'] ?? '').toString(),
+      sellerId: (json['sellerId'] ?? json['seller_id'] ?? json['farmer_id'] ?? '').toString(),
+      farmerName: (json['farmerName'] ?? json['farmer_name'] ?? 'Kisan Mitra').toString(),
+      commodity: (json['commodity'] ?? json['title'] ?? json['crop_type'] ?? 'Produce').toString(),
       quantity: parseDouble(json['quantity']),
-      unit: json['unit']?.toString() ?? 'Quintal',
-      pricePerUnit: parseDouble(json['pricePerUnit']),
-      quality: json['quality']?.toString() ?? 'B',
-      location: json['location']?.toString() ?? '',
-      description: json['description']?.toString() ?? '',
-      imageUrl: json['imageUrl']?.toString() ?? '',
-      phoneNumber: json['phoneNumber']?.toString(),
-      dateListed: json['dateListed'] is Timestamp
-          ? (json['dateListed'] as Timestamp).toDate()
-          : DateTime.tryParse(json['dateListed']?.toString() ?? '') ?? DateTime.now(),
-      isVerified: parseBool(json['isVerified'], false),
-      isSold: parseBool(json['isSold'], false),
-      isOrganic: parseBool(json['isOrganic'], false),
-      deliveryAvailable: parseBool(json['deliveryAvailable'], false),
-      minimumOrder: parseDouble(json['minimumOrder']),
-      isNegotiable: parseBool(json['isNegotiable'], true),
+      unit: (json['unit'] ?? 'Quintal').toString(),
+      pricePerUnit: parseDouble(json['pricePerUnit'] ?? json['price_per_unit']),
+      quality: (json['quality'] ?? 'A').toString(),
+      location: (json['location'] ?? 'Nashik, Maharashtra').toString(),
+      description: (json['description'] ?? '').toString(),
+      imageUrl: (json['imageUrl'] ?? json['image_url'] ?? '').toString(),
+      phoneNumber: (json['phoneNumber'] ?? json['phone_number'] ?? json['phone'])?.toString(),
+      dateListed: parseDate(json['dateListed'] ?? json['date_listed'] ?? json['created_at']),
+      isVerified: parseBool(json['isVerified'] ?? json['is_verified'], false),
+      isSold: parseBool(json['isSold'] ?? json['is_sold'], false),
+      isOrganic: parseBool(json['isOrganic'] ?? json['is_organic'], false),
+      deliveryAvailable: parseBool(json['deliveryAvailable'] ?? json['delivery_available'], false),
+      minimumOrder: parseDouble(json['minimumOrder'] ?? json['minimum_order']),
+      isNegotiable: parseBool(json['isNegotiable'] ?? json['is_negotiable'], true),
     );
   }
 
@@ -90,23 +91,36 @@ class MarketplaceListing {
     return {
       'id': id,
       'sellerId': sellerId,
+      'seller_id': sellerId,
+      'farmer_id': sellerId,
       'farmerName': farmerName,
+      'farmer_name': farmerName,
       'commodity': commodity,
       'quantity': quantity,
       'unit': unit,
       'pricePerUnit': pricePerUnit,
+      'price_per_unit': pricePerUnit,
       'quality': quality,
       'location': location,
       'description': description,
       'imageUrl': imageUrl,
+      'image_url': imageUrl,
       'phoneNumber': phoneNumber,
-      'dateListed': Timestamp.fromDate(dateListed),
+      'phone_number': phoneNumber,
+      'dateListed': dateListed.toIso8601String(),
+      'date_listed': dateListed.toIso8601String(),
       'isVerified': isVerified,
+      'is_verified': isVerified,
       'isSold': isSold,
+      'is_sold': isSold,
       'isOrganic': isOrganic,
+      'is_organic': isOrganic,
       'deliveryAvailable': deliveryAvailable,
+      'delivery_available': deliveryAvailable,
       'minimumOrder': minimumOrder,
+      'minimum_order': minimumOrder,
       'isNegotiable': isNegotiable,
+      'is_negotiable': isNegotiable,
     };
   }
 

@@ -1,7 +1,7 @@
-// 🌾 Krushi Mitra Pro AI Service (Gemini Integration)
+// ðŸŒ¾ Krushi Mitra Pro AI Service (Gemini Integration)
 import { getKnowledgeBrief, getOfflineAdvice, getFewShotContext } from './aiKnowledgeBase';
 
-const SYSTEM_PROMPT = `You are **Krushi Mitra** (कृषी मित्र) — a premium, expert-level AI agricultural advisor built specifically for Indian farmers.
+const SYSTEM_PROMPT = `You are **Krushi Mitra** (à¤•à¥ƒà¤·à¥€ à¤®à¤¿à¤¤à¥à¤°) â€” a premium, expert-level AI agricultural advisor built specifically for Indian farmers.
 
 YOUR IDENTITY:
 - You are a trusted farming companion, not a generic chatbot.
@@ -16,12 +16,12 @@ Before providing any advice, internally reason through the problem:
 4. **Prioritize Impact**: Identify the single most critical and immediate action the farmer needs to take.
 
 RESPONSE QUALITY RULES:
-1. Be CONCISE but COMPLETE. Farmers are busy — give actionable answers, not essays.
+1. Be CONCISE but COMPLETE. Farmers are busy â€” give actionable answers, not essays.
 2. Use **bold** for crop names, disease names, chemical names, and key numbers.
 3. Use bullet points and numbered lists for steps.
 4. Include specific quantities: "**2-3 ml per litre**" not "some amount".
 5. Include specific product names available in India: "**Thiamethoxam 25 WG (Actara)**" not "a systemic insecticide".
-6. Use emojis sparingly but effectively: 🌾 for crops, 💧 for irrigation, 🐛 for pests, 💰 for prices, 🌡️ for weather, ⚠️ for warnings.
+6. Use emojis sparingly but effectively: ðŸŒ¾ for crops, ðŸ’§ for irrigation, ðŸ› for pests, ðŸ’° for prices, ðŸŒ¡ï¸ for weather, âš ï¸ for warnings.
 7. Always mention the **best time to act** (morning/evening, which month, before/after rain).
 8. When relevant, give both **organic/desi** AND **chemical** solutions.
 9. End with ONE encouraging line.
@@ -29,29 +29,29 @@ RESPONSE QUALITY RULES:
 LANGUAGE:
 - Respond in the language the user uses. If asked in Hindi, reply in Hindi. If Marathi, reply in Marathi.
 - Use simple village-level language. Avoid English technical jargon when replying in Hindi/Marathi.
-- For Hindi: use words like "एक एकड़", "एक पंप (15 लीटर)", "बोरी" instead of hectare/litre.
+- For Hindi: use words like "à¤à¤• à¤à¤•à¤¡à¤¼", "à¤à¤• à¤ªà¤‚à¤ª (15 à¤²à¥€à¤Ÿà¤°)", "à¤¬à¥‹à¤°à¥€" instead of hectare/litre.
 
 SAFETY:
-- If unsure, say: "मुझे इस बारे में पूरा भरोसा नहीं है। कृपया अपने स्थानीय कृषि अधिकारी से सलाह लें। 🏢"
+- If unsure, say: "à¤®à¥à¤à¥‡ à¤‡à¤¸ à¤¬à¤¾à¤°à¥‡ à¤®à¥‡à¤‚ à¤ªà¥‚à¤°à¤¾ à¤­à¤°à¥‹à¤¸à¤¾ à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆà¥¤ à¤•à¥ƒà¤ªà¤¯à¤¾ à¤…à¤ªà¤¨à¥‡ à¤¸à¥à¤¥à¤¾à¤¨à¥€à¤¯ à¤•à¥ƒà¤·à¤¿ à¤…à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤¸à¥‡ à¤¸à¤²à¤¾à¤¹ à¤²à¥‡à¤‚à¥¤ ðŸ¢"
 - Never recommend banned pesticides.
 - Always warn about safety gear when recommending chemicals.`;
 
 function getLanguageInstruction(language) {
   switch (language) {
     case 'hi':
-      return 'LANGUAGE: Respond in HINDI (हिन्दी). Use simple rural Hindi. Units: एकड़, क्विंटल, किलो, पंप (15L). Avoid English technical terms — use Hindi equivalents.';
+      return 'LANGUAGE: Respond in HINDI (à¤¹à¤¿à¤¨à¥à¤¦à¥€). Use simple rural Hindi. Units: à¤à¤•à¤¡à¤¼, à¤•à¥à¤µà¤¿à¤‚à¤Ÿà¤², à¤•à¤¿à¤²à¥‹, à¤ªà¤‚à¤ª (15L). Avoid English technical terms â€” use Hindi equivalents.';
     case 'mr':
-      return 'LANGUAGE: Respond in MARATHI (मराठी). Use simple spoken Marathi. Units: एकर, क्विंटल, किलो. Use Marathi farming terms.';
+      return 'LANGUAGE: Respond in MARATHI (à¤®à¤°à¤¾à¤ à¥€). Use simple spoken Marathi. Units: à¤à¤•à¤°, à¤•à¥à¤µà¤¿à¤‚à¤Ÿà¤², à¤•à¤¿à¤²à¥‹. Use Marathi farming terms.';
     case 'gu':
-      return 'LANGUAGE: Respond in GUJARATI (ગુજરાતી). Use simple spoken Gujarati. Units: એકર, ક્વિન્ટલ, કિલો.';
+      return 'LANGUAGE: Respond in GUJARATI (àª—à«àªœàª°àª¾àª¤à«€). Use simple spoken Gujarati. Units: àªàª•àª°, àª•à«àªµàª¿àª¨à«àªŸàª², àª•àª¿àª²à«‹.';
     case 'te':
-      return 'LANGUAGE: Respond in TELUGU (తెలుగు). Use simple spoken Telugu. Units: ఎకరా, క్వింటాల్, కిలో.';
+      return 'LANGUAGE: Respond in TELUGU (à°¤à±†à°²à±à°—à±). Use simple spoken Telugu. Units: à°Žà°•à°°à°¾, à°•à±à°µà°¿à°‚à°Ÿà°¾à°²à±, à°•à°¿à°²à±‹.';
     case 'ta':
-      return 'LANGUAGE: Respond in TAMIL (தமிழ்). Use simple spoken Tamil. Units: ஏக்கர், குவிண்டால், கிலோ.';
+      return 'LANGUAGE: Respond in TAMIL (à®¤à®®à®¿à®´à¯). Use simple spoken Tamil. Units: à®à®•à¯à®•à®°à¯, à®•à¯à®µà®¿à®£à¯à®Ÿà®¾à®²à¯, à®•à®¿à®²à¯‹.';
     case 'kn':
-      return 'LANGUAGE: Respond in KANNADA (ಕನ್ನಡ). Use simple spoken Kannada. Units: ಎಕರೆ, ಕ್ವಿಂಟಾಲ್, ಕೆಜಿ.';
+      return 'LANGUAGE: Respond in KANNADA (à²•à²¨à³à²¨à²¡). Use simple spoken Kannada. Units: à²Žà²•à²°à³†, à²•à³à²µà²¿à²‚à²Ÿà²¾à²²à³, à²•à³†à²œà²¿.';
     case 'bn':
-      return 'LANGUAGE: Respond in BENGALI (বাংলা). Use simple spoken Bengali. Units: একর, কুইন্টাল, কেজি.';
+      return 'LANGUAGE: Respond in BENGALI (à¦¬à¦¾à¦‚à¦²à¦¾). Use simple spoken Bengali. Units: à¦à¦•à¦°, à¦•à§à¦‡à¦¨à§à¦Ÿà¦¾à¦², à¦•à§‡à¦œà¦¿.';
     default:
       return 'LANGUAGE: Respond in ENGLISH. Use simple words. Avoid jargon. Use Indian units (acre, quintal, kg).';
   }
@@ -75,7 +75,7 @@ function buildFarmerBrief(context) {
 
   if (w) {
     brief += '\nCURRENT WEATHER:\n';
-    brief += `- Temperature: ${w.temperature}°C (feels like ${w.feelsLike}°C)\n`;
+    brief += `- Temperature: ${w.temperature}Â°C (feels like ${w.feelsLike}Â°C)\n`;
     brief += `- Condition: ${w.condition}\n`;
     brief += `- Humidity: ${w.humidity}%\n`;
     brief += `- Wind: ${w.windSpeed} m/s\n`;
@@ -107,63 +107,89 @@ function extractJson(text) {
   return cleaned;
 }
 
-// Global helper to execute Gemini API calls directly from frontend
-async function callGemini(prompt, apiKey, systemInstruction = null) {
-  const resolvedApiKey = apiKey || import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
-  if (!resolvedApiKey) {
-    throw new Error('API_KEY_MISSING');
+// Global helper to execute Gemini API calls directly from frontend with multi-key rotation and Groq fallback
+export async function callGemini(prompt, apiKey, systemInstruction = null) {
+  const geminiKeys = [
+    apiKey,
+    import.meta.env.VITE_GEMINI_API_KEY,
+    import.meta.env.VITE_GEMINI_API_KEY_2,
+  ].filter(k => k && typeof k === 'string' && k.trim().length > 15 && !k.startsWith('gsk_'));
+
+  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+
+  let lastError = null;
+
+  // 1. Try Gemini Keys in sequence (Key 1 -> Key 2 Backup)
+  for (const key of geminiKeys) {
+    try {
+      const model = "gemini-flash-latest";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key.trim()}`;
+
+      const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+      const requestBody = { contents };
+
+      if (systemInstruction) {
+        requestBody.systemInstruction = {
+          parts: [{ text: systemInstruction }]
+        };
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } else {
+        const err = await response.json().catch(() => ({}));
+        console.warn(`Gemini key failed with HTTP ${response.status}:`, err);
+        lastError = new Error(err?.error?.message || `HTTP ${response.status}`);
+      }
+    } catch (e) {
+      console.warn('Gemini request exception:', e);
+      lastError = e;
+    }
   }
 
-  const isGroq = resolvedApiKey.startsWith('gsk_');
-  const model = "gemini-1.5-flash";
-  const url = isGroq
-    ? 'https://api.groq.com/openai/v1/chat/completions'
-    : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${resolvedApiKey}`;
-
-  const contents = [{ role: 'user', parts: [{ text: prompt }] }];
-  const requestBody = { contents };
-
-  if (systemInstruction) {
-    requestBody.systemInstruction = {
-      parts: [{ text: systemInstruction }]
-    };
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: isGroq
-      ? {
+  // 2. Fallback to Groq if Gemini keys are exhausted or unavailable
+  if (groqKey && groqKey.startsWith('gsk_')) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${resolvedApiKey}`
-        }
-      : { 'Content-Type': 'application/json' },
-    body: JSON.stringify(isGroq ? {
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: systemInstruction || SYSTEM_PROMPT },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 1500
-    } : requestBody)
-  });
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-oss-20b',
+          messages: [
+            { role: 'system', content: systemInstruction || SYSTEM_PROMPT },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500
+        })
+      });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err?.error?.message || err?.message || `HTTP ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return text;
+      }
+    } catch (groqErr) {
+      console.warn('Groq fallback failed:', groqErr);
+      lastError = groqErr;
+    }
   }
 
-  const data = await response.json();
-  const text = isGroq
-    ? data.choices?.[0]?.message?.content
-    : data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error(isGroq ? 'No response content from Groq.' : 'No response content from Gemini.');
-  }
-  return text;
+  throw lastError || new Error('No working AI API key available.');
 }
 
-// ─── CHATBOT ───
+// â”€â”€â”€ CHATBOT â”€â”€â”€
 export async function chat(history, userMessage, context, apiKey) {
   const resolvedApiKey = apiKey || import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
   if (!resolvedApiKey) {
@@ -193,12 +219,12 @@ Provide your expert response:`;
     return await callGemini(fullPrompt, resolvedApiKey, SYSTEM_PROMPT);
   } catch (error) {
     console.error("AI Chat Error:", error);
-    return `⚠️ AI Error: ${error.message}. Running local expert database fallback:\n\n` + 
+    return `âš ï¸ AI Error: ${error.message}. Running local expert database fallback:\n\n` + 
            getOfflineAdvice(userMessage, context.profile?.cropsGrown || [], context.profile?.district || '');
   }
 }
 
-// ─── CROP DOCTOR ───
+// â”€â”€â”€ CROP DOCTOR â”€â”€â”€
 export async function analyzeCropImage(base64DataOrImage, mimeTypeOrCropHint, contextOrApiKey, maybeApiKeyOrContext) {
   const resolvedApiKey = (() => {
     const envKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
@@ -300,8 +326,8 @@ Respond ONLY in valid JSON (no markdown, no backticks):
   "disease_name": "Precise disease/pest/deficiency name. Use 'None' if healthy",
   "severity": "low OR medium OR high OR critical",
   "confidence": 85,
-  "symptoms": "Describe exactly what you see — leaf color, spots, wilting pattern",
-  "causes": "What causes this — pathogen name, environmental triggers",
+  "symptoms": "Describe exactly what you see â€” leaf color, spots, wilting pattern",
+  "causes": "What causes this â€” pathogen name, environmental triggers",
   "treatment_organic": "Specific organic remedy with exact dosage. E.g. Neem oil 5ml/L spray.",
   "treatment_chemical": "Specific chemical with Indian brand name and dosage. E.g. Mancozeb 75 WP @ 2.5g/L.",
   "prevention": "3-4 specific preventive measures for future seasons"
@@ -353,65 +379,65 @@ function simulateImageAnalysis(context, isFailFallback = false) {
     Tomato: {
       crop_name: "Tomato",
       health_status: "diseased",
-      disease_name: lang === 'hi' ? 'अगेती झुलसा रोग (Early Blight)' : 'Early Blight (Alternaria solani)',
+      disease_name: lang === 'hi' ? 'à¤…à¤—à¥‡à¤¤à¥€ à¤à¥à¤²à¤¸à¤¾ à¤°à¥‹à¤— (Early Blight)' : 'Early Blight (Alternaria solani)',
       severity: "medium",
       confidence: 88,
       symptoms: lang === 'hi' 
-        ? "निचली पत्तियों पर गाढ़े भूरे रंग के गोल छल्लेदार धब्बे दिखाई दे रहे हैं। पत्तियां पीली पड़कर गिर रही हैं।" 
+        ? "à¤¨à¤¿à¤šà¤²à¥€ à¤ªà¤¤à¥à¤¤à¤¿à¤¯à¥‹à¤‚ à¤ªà¤° à¤—à¤¾à¤¢à¤¼à¥‡ à¤­à¥‚à¤°à¥‡ à¤°à¤‚à¤— à¤•à¥‡ à¤—à¥‹à¤² à¤›à¤²à¥à¤²à¥‡à¤¦à¤¾à¤° à¤§à¤¬à¥à¤¬à¥‡ à¤¦à¤¿à¤–à¤¾à¤ˆ à¤¦à¥‡ à¤°à¤¹à¥‡ à¤¹à¥ˆà¤‚à¥¤ à¤ªà¤¤à¥à¤¤à¤¿à¤¯à¤¾à¤‚ à¤ªà¥€à¤²à¥€ à¤ªà¤¡à¤¼à¤•à¤° à¤—à¤¿à¤° à¤°à¤¹à¥€ à¤¹à¥ˆà¤‚à¥¤" 
         : "Concentric dark brown rings appearing on older leaves. Leaves yellowing and shedding near the base.",
       causes: lang === 'hi'
-        ? "फफूंद (Alternaria solani) के कारण। उच्च आर्द्रता (80% से अधिक) और 24-29 डिग्री सेल्सियस तापमान इस रोग को बढ़ावा देते हैं।"
-        : "Fungal pathogen favored by warm temperatures (24-29°C) and persistent high moisture or heavy dew.",
+        ? "à¤«à¤«à¥‚à¤‚à¤¦ (Alternaria solani) à¤•à¥‡ à¤•à¤¾à¤°à¤£à¥¤ à¤‰à¤šà¥à¤š à¤†à¤°à¥à¤¦à¥à¤°à¤¤à¤¾ (80% à¤¸à¥‡ à¤…à¤§à¤¿à¤•) à¤”à¤° 24-29 à¤¡à¤¿à¤—à¥à¤°à¥€ à¤¸à¥‡à¤²à¥à¤¸à¤¿à¤¯à¤¸ à¤¤à¤¾à¤ªà¤®à¤¾à¤¨ à¤‡à¤¸ à¤°à¥‹à¤— à¤•à¥‹ à¤¬à¤¢à¤¼à¤¾à¤µà¤¾ à¤¦à¥‡à¤¤à¥‡ à¤¹à¥ˆà¤‚à¥¤"
+        : "Fungal pathogen favored by warm temperatures (24-29Â°C) and persistent high moisture or heavy dew.",
       treatment_organic: lang === 'hi'
-        ? "नीम का तेल (5 मिली/लीटर) और बेकिंग सोडा (2 ग्राम/लीटर) के घोल का छिड़काव करें। 7 दिन बाद दोहराएं।"
+        ? "à¤¨à¥€à¤® à¤•à¤¾ à¤¤à¥‡à¤² (5 à¤®à¤¿à¤²à¥€/à¤²à¥€à¤Ÿà¤°) à¤”à¤° à¤¬à¥‡à¤•à¤¿à¤‚à¤— à¤¸à¥‹à¤¡à¤¾ (2 à¤—à¥à¤°à¤¾à¤®/à¤²à¥€à¤Ÿà¤°) à¤•à¥‡ à¤˜à¥‹à¤² à¤•à¤¾ à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤ 7 à¤¦à¤¿à¤¨ à¤¬à¤¾à¤¦ à¤¦à¥‹à¤¹à¤°à¤¾à¤à¤‚à¥¤"
         : "Spray neem oil (5 ml/L) mixed with baking soda (2g/L) on leaves. Repeat after 7 days.",
       treatment_chemical: lang === 'hi'
-        ? "Mancozeb 75 WP (Dithane M-45) @ 2.5 ग्राम प्रति लीटर पानी में मिलाकर सुबह या शाम को छिड़काव करें।"
+        ? "Mancozeb 75 WP (Dithane M-45) @ 2.5 à¤—à¥à¤°à¤¾à¤® à¤ªà¥à¤°à¤¤à¤¿ à¤²à¥€à¤Ÿà¤° à¤ªà¤¾à¤¨à¥€ à¤®à¥‡à¤‚ à¤®à¤¿à¤²à¤¾à¤•à¤° à¤¸à¥à¤¬à¤¹ à¤¯à¤¾ à¤¶à¤¾à¤® à¤•à¥‹ à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤"
         : "Spray Mancozeb 75 WP (Dithane M-45) @ 2.5g/L water during late evening.",
       prevention: lang === 'hi'
-        ? ["फसलों को बदल-बदल कर लगाएं।", "खेत में जलजमाव न होने दें।", "संक्रमित पौधों के अवशेषों को जला दें।"]
+        ? ["à¤«à¤¸à¤²à¥‹à¤‚ à¤•à¥‹ à¤¬à¤¦à¤²-à¤¬à¤¦à¤² à¤•à¤° à¤²à¤—à¤¾à¤à¤‚à¥¤", "à¤–à¥‡à¤¤ à¤®à¥‡à¤‚ à¤œà¤²à¤œà¤®à¤¾à¤µ à¤¨ à¤¹à¥‹à¤¨à¥‡ à¤¦à¥‡à¤‚à¥¤", "à¤¸à¤‚à¤•à¥à¤°à¤®à¤¿à¤¤ à¤ªà¥Œà¤§à¥‹à¤‚ à¤•à¥‡ à¤…à¤µà¤¶à¥‡à¤·à¥‹à¤‚ à¤•à¥‹ à¤œà¤²à¤¾ à¤¦à¥‡à¤‚à¥¤"]
         : ["Practice 3-year crop rotation.", "Ensure proper crop spacing for aeration.", "Remove crop debris after harvest."]
     },
     Wheat: {
       crop_name: "Wheat",
       health_status: "diseased",
-      disease_name: lang === 'hi' ? 'पीला रतुआ (Yellow Rust)' : 'Yellow Rust (Puccinia striiformis)',
+      disease_name: lang === 'hi' ? 'à¤ªà¥€à¤²à¤¾ à¤°à¤¤à¥à¤† (Yellow Rust)' : 'Yellow Rust (Puccinia striiformis)',
       severity: "high",
       confidence: 90,
       symptoms: lang === 'hi' 
-        ? "पत्तियों पर पीले रंग की धारियां और पाउडर जैसा पदार्थ दिखाई दे रहा है।" 
+        ? "à¤ªà¤¤à¥à¤¤à¤¿à¤¯à¥‹à¤‚ à¤ªà¤° à¤ªà¥€à¤²à¥‡ à¤°à¤‚à¤— à¤•à¥€ à¤§à¤¾à¤°à¤¿à¤¯à¤¾à¤‚ à¤”à¤° à¤ªà¤¾à¤‰à¤¡à¤° à¤œà¥ˆà¤¸à¤¾ à¤ªà¤¦à¤¾à¤°à¥à¤¥ à¤¦à¤¿à¤–à¤¾à¤ˆ à¤¦à¥‡ à¤°à¤¹à¤¾ à¤¹à¥ˆà¥¤" 
         : "Linear rows of yellow/orange pustules (spores) forming stripes on leaves. Rubbing leaves leaves yellow dust on fingers.",
       causes: lang === 'hi'
-        ? "फफूंद स्पोर्स जो ठंडे और नम मौसम में तेजी से फैलते हैं।"
+        ? "à¤«à¤«à¥‚à¤‚à¤¦ à¤¸à¥à¤ªà¥‹à¤°à¥à¤¸ à¤œà¥‹ à¤ à¤‚à¤¡à¥‡ à¤”à¤° à¤¨à¤® à¤®à¥Œà¤¸à¤® à¤®à¥‡à¤‚ à¤¤à¥‡à¤œà¥€ à¤¸à¥‡ à¤«à¥ˆà¤²à¤¤à¥‡ à¤¹à¥ˆà¤‚à¥¤"
         : "Airborne fungal spores favored by cool, damp weather conditions during the tillering stage.",
       treatment_organic: lang === 'hi'
-        ? "खट्टा मट्ठा (500 मिली) और हींग (10 ग्राम) 15 लीटर पानी में घोलकर छिड़काव करें।"
+        ? "à¤–à¤Ÿà¥à¤Ÿà¤¾ à¤®à¤Ÿà¥à¤ à¤¾ (500 à¤®à¤¿à¤²à¥€) à¤”à¤° à¤¹à¥€à¤‚à¤— (10 à¤—à¥à¤°à¤¾à¤®) 15 à¤²à¥€à¤Ÿà¤° à¤ªà¤¾à¤¨à¥€ à¤®à¥‡à¤‚ à¤˜à¥‹à¤²à¤•à¤° à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤"
         : "Foliar spray of fermented butter-milk (chaas) @ 500ml mixed with 15L water.",
       treatment_chemical: lang === 'hi'
-        ? "Propiconazole 25 EC (Tilt) @ 1 मिली प्रति लीटर पानी में मिलाकर छिड़काव करें।"
+        ? "Propiconazole 25 EC (Tilt) @ 1 à¤®à¤¿à¤²à¥€ à¤ªà¥à¤°à¤¤à¤¿ à¤²à¥€à¤Ÿà¤° à¤ªà¤¾à¤¨à¥€ à¤®à¥‡à¤‚ à¤®à¤¿à¤²à¤¾à¤•à¤° à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤"
         : "Foliar spray of Propiconazole 25 EC (Tilt) @ 1 ml/L water.",
       prevention: lang === 'hi'
-        ? ["प्रतिरोधी किस्मों (जैसे HD 3086) की बुवाई करें।", "समय पर बुवाई करें।", "नाइट्रोजन का अत्यधिक उपयोग न करें।"]
+        ? ["à¤ªà¥à¤°à¤¤à¤¿à¤°à¥‹à¤§à¥€ à¤•à¤¿à¤¸à¥à¤®à¥‹à¤‚ (à¤œà¥ˆà¤¸à¥‡ HD 3086) à¤•à¥€ à¤¬à¥à¤µà¤¾à¤ˆ à¤•à¤°à¥‡à¤‚à¥¤", "à¤¸à¤®à¤¯ à¤ªà¤° à¤¬à¥à¤µà¤¾à¤ˆ à¤•à¤°à¥‡à¤‚à¥¤", "à¤¨à¤¾à¤‡à¤Ÿà¥à¤°à¥‹à¤œà¤¨ à¤•à¤¾ à¤…à¤¤à¥à¤¯à¤§à¤¿à¤• à¤‰à¤ªà¤¯à¥‹à¤— à¤¨ à¤•à¤°à¥‡à¤‚à¥¤"]
         : ["Sow rust-resistant varieties like HD 3086.", "Avoid late sowing.", "Avoid excess nitrogen application."]
     },
     Cotton: {
       crop_name: "Cotton",
       health_status: "pest_damage",
-      disease_name: lang === 'hi' ? 'गुलाबी सुंडी का हमला (Pink Bollworm)' : 'Pink Bollworm Infestation',
+      disease_name: lang === 'hi' ? 'à¤—à¥à¤²à¤¾à¤¬à¥€ à¤¸à¥à¤‚à¤¡à¥€ à¤•à¤¾ à¤¹à¤®à¤²à¤¾ (Pink Bollworm)' : 'Pink Bollworm Infestation',
       severity: "critical",
       confidence: 92,
       symptoms: lang === 'hi'
-        ? "गूलर (bolls) के अंदर छेद और गुलाबी रंग की इल्लियां दिखाई दे रही हैं। फूल गुलाब की तरह बंद हो रहे हैं।"
+        ? "à¤—à¥‚à¤²à¤° (bolls) à¤•à¥‡ à¤…à¤‚à¤¦à¤° à¤›à¥‡à¤¦ à¤”à¤° à¤—à¥à¤²à¤¾à¤¬à¥€ à¤°à¤‚à¤— à¤•à¥€ à¤‡à¤²à¥à¤²à¤¿à¤¯à¤¾à¤‚ à¤¦à¤¿à¤–à¤¾à¤ˆ à¤¦à¥‡ à¤°à¤¹à¥€ à¤¹à¥ˆà¤‚à¥¤ à¤«à¥‚à¤² à¤—à¥à¤²à¤¾à¤¬ à¤•à¥€ à¤¤à¤°à¤¹ à¤¬à¤‚à¤¦ à¤¹à¥‹ à¤°à¤¹à¥‡ à¤¹à¥ˆà¤‚à¥¤"
         : "Rosetted flowers that fail to open properly. Entry holes visible on cotton bolls with tiny pink larvae inside.",
       causes: "Pectinophora gossypiella moth laying eggs on flowers/bolls.",
       treatment_organic: lang === 'hi'
-        ? "नीम बीज अर्क (NSKE 5%) का छिड़काव करें। फेरोमोन जाल (5 प्रति एकड़) लगाएं।"
+        ? "à¤¨à¥€à¤® à¤¬à¥€à¤œ à¤…à¤°à¥à¤• (NSKE 5%) à¤•à¤¾ à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤ à¤«à¥‡à¤°à¥‹à¤®à¥‹à¤¨ à¤œà¤¾à¤² (5 à¤ªà¥à¤°à¤¤à¤¿ à¤à¤•à¤¡à¤¼) à¤²à¤—à¤¾à¤à¤‚à¥¤"
         : "Install 5 Pheromone traps per acre. Spray Neem Seed Kernel Extract (NSKE 5%).",
       treatment_chemical: lang === 'hi'
-        ? "Profex Super (Profenofos 40% + Cypermethrin 4%) @ 2 मिली प्रति लीटर पानी का छिड़काव करें।"
+        ? "Profex Super (Profenofos 40% + Cypermethrin 4%) @ 2 à¤®à¤¿à¤²à¥€ à¤ªà¥à¤°à¤¤à¤¿ à¤²à¥€à¤Ÿà¤° à¤ªà¤¾à¤¨à¥€ à¤•à¤¾ à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤"
         : "Spray Profenofos 40% + Cypermethrin 4% EC @ 2 ml/L water.",
       prevention: lang === 'hi'
-        ? ["फसल चक्र अपनाएं।", "बुवाई के लिए प्रमाणित बीटी बीज चुनें।", "फसल कटाई के बाद खेत की गहरी जुताई करें।"]
+        ? ["à¤«à¤¸à¤² à¤šà¤•à¥à¤° à¤…à¤ªà¤¨à¤¾à¤à¤‚à¥¤", "à¤¬à¥à¤µà¤¾à¤ˆ à¤•à¥‡ à¤²à¤¿à¤ à¤ªà¥à¤°à¤®à¤¾à¤£à¤¿à¤¤ à¤¬à¥€à¤Ÿà¥€ à¤¬à¥€à¤œ à¤šà¥à¤¨à¥‡à¤‚à¥¤", "à¤«à¤¸à¤² à¤•à¤Ÿà¤¾à¤ˆ à¤•à¥‡ à¤¬à¤¾à¤¦ à¤–à¥‡à¤¤ à¤•à¥€ à¤—à¤¹à¤°à¥€ à¤œà¥à¤¤à¤¾à¤ˆ à¤•à¤°à¥‡à¤‚à¥¤"]
         : ["Observe a strict closed season.", "Use certified Bt cotton seeds.", "Deep summer ploughing to destroy pupae."]
     }
   };
@@ -423,7 +449,7 @@ function simulateImageAnalysis(context, isFailFallback = false) {
   return res;
 }
 
-// ─── ELIGIBILITY CHECKER ───
+// â”€â”€â”€ ELIGIBILITY CHECKER â”€â”€â”€
 export async function checkSchemeEligibility(context, scheme, apiKey) {
   if (!apiKey) {
     // Generate context-aware mock response
@@ -467,29 +493,29 @@ function simulateSchemeEligibility(context, scheme) {
   const landSize = parseFloat(p?.landSize || 0);
 
   if (lang === 'hi') {
-    return `### 🌾 **पात्रता विश्लेषण रिपोर्ट** (कृषि मित्र एआई)
+    return `### ðŸŒ¾ **à¤ªà¤¾à¤¤à¥à¤°à¤¤à¤¾ à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ** (à¤•à¥ƒà¤·à¤¿ à¤®à¤¿à¤¤à¥à¤° à¤à¤†à¤ˆ)
   
-*   **योजना**: ${scheme.name}
-*   **स्थिति**: ${landSize <= 5 ? '🟢 पूर्ण रूप से पात्र' : '🟡 आंशिक रूप से पात्र (भूमि सीमा जांच के अधीन)'}
+*   **à¤¯à¥‹à¤œà¤¨à¤¾**: ${scheme.name}
+*   **à¤¸à¥à¤¥à¤¿à¤¤à¤¿**: ${landSize <= 5 ? 'ðŸŸ¢ à¤ªà¥‚à¤°à¥à¤£ à¤°à¥‚à¤ª à¤¸à¥‡ à¤ªà¤¾à¤¤à¥à¤°' : 'ðŸŸ¡ à¤†à¤‚à¤¶à¤¿à¤• à¤°à¥‚à¤ª à¤¸à¥‡ à¤ªà¤¾à¤¤à¥à¤° (à¤­à¥‚à¤®à¤¿ à¤¸à¥€à¤®à¤¾ à¤œà¤¾à¤‚à¤š à¤•à¥‡ à¤…à¤§à¥€à¤¨)'}
   
-**पात्रता कारक:**
-1.  **स्थान**: आप ${p?.district || 'अपने ज़िले'}, ${p?.state || 'अपने राज्य'} से हैं, जहाँ यह योजना लागू है।
-2.  **भूमि आकार**: आपके पास ${landSize} एकड़ ज़मीन है, जो लघु एवं सीमांत किसान श्रेणी में आती है।
-3.  **फसलें**: आप ${crops.join(', ')} उगाते हैं जो इस योजना के अंतर्गत सहायता के लिए उपयुक्त हैं।
+**à¤ªà¤¾à¤¤à¥à¤°à¤¤à¤¾ à¤•à¤¾à¤°à¤•:**
+1.  **à¤¸à¥à¤¥à¤¾à¤¨**: à¤†à¤ª ${p?.district || 'à¤…à¤ªà¤¨à¥‡ à¤œà¤¼à¤¿à¤²à¥‡'}, ${p?.state || 'à¤…à¤ªà¤¨à¥‡ à¤°à¤¾à¤œà¥à¤¯'} à¤¸à¥‡ à¤¹à¥ˆà¤‚, à¤œà¤¹à¤¾à¤ à¤¯à¤¹ à¤¯à¥‹à¤œà¤¨à¤¾ à¤²à¤¾à¤—à¥‚ à¤¹à¥ˆà¥¤
+2.  **à¤­à¥‚à¤®à¤¿ à¤†à¤•à¤¾à¤°**: à¤†à¤ªà¤•à¥‡ à¤ªà¤¾à¤¸ ${landSize} à¤à¤•à¤¡à¤¼ à¤œà¤¼à¤®à¥€à¤¨ à¤¹à¥ˆ, à¤œà¥‹ à¤²à¤˜à¥ à¤à¤µà¤‚ à¤¸à¥€à¤®à¤¾à¤‚à¤¤ à¤•à¤¿à¤¸à¤¾à¤¨ à¤¶à¥à¤°à¥‡à¤£à¥€ à¤®à¥‡à¤‚ à¤†à¤¤à¥€ à¤¹à¥ˆà¥¤
+3.  **à¤«à¤¸à¤²à¥‡à¤‚**: à¤†à¤ª ${crops.join(', ')} à¤‰à¤—à¤¾à¤¤à¥‡ à¤¹à¥ˆà¤‚ à¤œà¥‹ à¤‡à¤¸ à¤¯à¥‹à¤œà¤¨à¤¾ à¤•à¥‡ à¤…à¤‚à¤¤à¤°à¥à¤—à¤¤ à¤¸à¤¹à¤¾à¤¯à¤¤à¤¾ à¤•à¥‡ à¤²à¤¿à¤ à¤‰à¤ªà¤¯à¥à¤•à¥à¤¤ à¤¹à¥ˆà¤‚à¥¤
 
-**आवश्यक दस्तावेज:**
-*   आधार कार्ड (Aadhaar Card)
-*   भूमि की नकल (7/12 उतारा या खतौनी)
-*   बैंक खाता पासबुक (जिसमें आधार लिंक हो)
+**à¤†à¤µà¤¶à¥à¤¯à¤• à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œ:**
+*   à¤†à¤§à¤¾à¤° à¤•à¤¾à¤°à¥à¤¡ (Aadhaar Card)
+*   à¤­à¥‚à¤®à¤¿ à¤•à¥€ à¤¨à¤•à¤² (7/12 à¤‰à¤¤à¤¾à¤°à¤¾ à¤¯à¤¾ à¤–à¤¤à¥Œà¤¨à¥€)
+*   à¤¬à¥ˆà¤‚à¤• à¤–à¤¾à¤¤à¤¾ à¤ªà¤¾à¤¸à¤¬à¥à¤• (à¤œà¤¿à¤¸à¤®à¥‡à¤‚ à¤†à¤§à¤¾à¤° à¤²à¤¿à¤‚à¤• à¤¹à¥‹)
 
-**कृषि मित्र की सलाह**: 
-आप आधिकारिक वेबसाइट पर जाकर **${scheme.applyLink ? 'New Registration' : 'आवेदन करें'}** लिंक के माध्यम से तुरंत पंजीकरण करा सकते हैं। यदि कोई समस्या हो तो हेल्पलाइन नंबर पर संपर्क करें। 🌾`;
+**à¤•à¥ƒà¤·à¤¿ à¤®à¤¿à¤¤à¥à¤° à¤•à¥€ à¤¸à¤²à¤¾à¤¹**: 
+à¤†à¤ª à¤†à¤§à¤¿à¤•à¤¾à¤°à¤¿à¤• à¤µà¥‡à¤¬à¤¸à¤¾à¤‡à¤Ÿ à¤ªà¤° à¤œà¤¾à¤•à¤° **${scheme.applyLink ? 'New Registration' : 'à¤†à¤µà¥‡à¤¦à¤¨ à¤•à¤°à¥‡à¤‚'}** à¤²à¤¿à¤‚à¤• à¤•à¥‡ à¤®à¤¾à¤§à¥à¤¯à¤® à¤¸à¥‡ à¤¤à¥à¤°à¤‚à¤¤ à¤ªà¤‚à¤œà¥€à¤•à¤°à¤£ à¤•à¤°à¤¾ à¤¸à¤•à¤¤à¥‡ à¤¹à¥ˆà¤‚à¥¤ à¤¯à¤¦à¤¿ à¤•à¥‹à¤ˆ à¤¸à¤®à¤¸à¥à¤¯à¤¾ à¤¹à¥‹ à¤¤à¥‹ à¤¹à¥‡à¤²à¥à¤ªà¤²à¤¾à¤‡à¤¨ à¤¨à¤‚à¤¬à¤° à¤ªà¤° à¤¸à¤‚à¤ªà¤°à¥à¤• à¤•à¤°à¥‡à¤‚à¥¤ ðŸŒ¾`;
   }
 
-  return `### 🌾 **Eligibility Analysis Report** (Krushi Mitra AI)
+  return `### ðŸŒ¾ **Eligibility Analysis Report** (Krushi Mitra AI)
   
 *   **Scheme**: ${scheme.name}
-*   **Status**: ${landSize <= 5 ? '🟢 Eligible' : '🟡 Partially Eligible (Pending land ceiling checks)'}
+*   **Status**: ${landSize <= 5 ? 'ðŸŸ¢ Eligible' : 'ðŸŸ¡ Partially Eligible (Pending land ceiling checks)'}
   
 **Key Matches:**
 1.  **Location**: Your registered location (${p?.district || 'District'}, ${p?.state || 'State'}) is eligible.
@@ -505,7 +531,7 @@ function simulateSchemeEligibility(context, scheme) {
 Go to the **Apply Now** link to fill out the form. You are highly recommended to proceed with registration this week to catch the current season disbursement!`;
 }
 
-// ─── DAILY ADVISORY & TIP ───
+// â”€â”€â”€ DAILY ADVISORY & TIP â”€â”€â”€
 export async function getDailyFarmingTip(cropsList, location, season, language, apiKey) {
   if (!apiKey) {
     return simulateDailyTip(cropsList, location, season, language);
@@ -537,19 +563,19 @@ function simulateDailyTip(cropsList, location, season, language) {
 
   const tips = {
     Tomato: {
-      en: "🌾 **Tomato Tip**: Keep a close eye out for early signs of Early Blight. If leaf spots appear, spray **Mancozeb 75 WP @ 2.5g/L** in the cool evening. Ensure proper stakes.",
-      hi: "🌾 **टमाटर की सलाह**: अगेती झुलसा रोग की जांच करें। यदि पत्तियों पर गोल छल्लेदार धब्बे दिखें, तो शाम को **मैन्कोजेब 75 WP (Dithane M-45) @ 2.5 ग्राम/लीटर** घोल का छिड़काव करें।",
-      mr: "🌾 **टोमॅटो टीप**: लवकर येणाऱ्या करपा रोगाची तपासणी करा. पाने पिवळी पडल्यास संध्याकाळी **मॅन्कोझेब ७५ डब्ल्यूपी @ २.५ ग्रॅम प्रति लीटर** पाण्यात मिसळून फवारा."
+      en: "ðŸŒ¾ **Tomato Tip**: Keep a close eye out for early signs of Early Blight. If leaf spots appear, spray **Mancozeb 75 WP @ 2.5g/L** in the cool evening. Ensure proper stakes.",
+      hi: "ðŸŒ¾ **à¤Ÿà¤®à¤¾à¤Ÿà¤° à¤•à¥€ à¤¸à¤²à¤¾à¤¹**: à¤…à¤—à¥‡à¤¤à¥€ à¤à¥à¤²à¤¸à¤¾ à¤°à¥‹à¤— à¤•à¥€ à¤œà¤¾à¤‚à¤š à¤•à¤°à¥‡à¤‚à¥¤ à¤¯à¤¦à¤¿ à¤ªà¤¤à¥à¤¤à¤¿à¤¯à¥‹à¤‚ à¤ªà¤° à¤—à¥‹à¤² à¤›à¤²à¥à¤²à¥‡à¤¦à¤¾à¤° à¤§à¤¬à¥à¤¬à¥‡ à¤¦à¤¿à¤–à¥‡à¤‚, à¤¤à¥‹ à¤¶à¤¾à¤® à¤•à¥‹ **à¤®à¥ˆà¤¨à¥à¤•à¥‹à¤œà¥‡à¤¬ 75 WP (Dithane M-45) @ 2.5 à¤—à¥à¤°à¤¾à¤®/à¤²à¥€à¤Ÿà¤°** à¤˜à¥‹à¤² à¤•à¤¾ à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤",
+      mr: "ðŸŒ¾ **à¤Ÿà¥‹à¤®à¥…à¤Ÿà¥‹ à¤Ÿà¥€à¤ª**: à¤²à¤µà¤•à¤° à¤¯à¥‡à¤£à¤¾à¤±à¥à¤¯à¤¾ à¤•à¤°à¤ªà¤¾ à¤°à¥‹à¤—à¤¾à¤šà¥€ à¤¤à¤ªà¤¾à¤¸à¤£à¥€ à¤•à¤°à¤¾. à¤ªà¤¾à¤¨à¥‡ à¤ªà¤¿à¤µà¤³à¥€ à¤ªà¤¡à¤²à¥à¤¯à¤¾à¤¸ à¤¸à¤‚à¤§à¥à¤¯à¤¾à¤•à¤¾à¤³à¥€ **à¤®à¥…à¤¨à¥à¤•à¥‹à¤à¥‡à¤¬ à¥­à¥« à¤¡à¤¬à¥à¤²à¥à¤¯à¥‚à¤ªà¥€ @ à¥¨.à¥« à¤—à¥à¤°à¥…à¤® à¤ªà¥à¤°à¤¤à¤¿ à¤²à¥€à¤Ÿà¤°** à¤ªà¤¾à¤£à¥à¤¯à¤¾à¤¤ à¤®à¤¿à¤¸à¤³à¥‚à¤¨ à¤«à¤µà¤¾à¤°à¤¾."
     },
     Wheat: {
-      en: "🌾 **Wheat Tip**: If sowing late, increase your seed rate to **125-150 kg per acre**. Give the crucial Crown Root Initiation (CRI) irrigation exactly **21 days** after sowing.",
-      hi: "🌾 **गेहूं की सलाह**: देरी से बुवाई करने पर बीज दर को बढ़ाकर **125-150 किलो/एकड़** करें। बुवाई के ठीक **21 दिन बाद** (CRI चरण) पहली सिंचाई अवश्य करें।",
-      mr: "🌾 **गहू टीप**: उशिरा पेरणीसाठी बियाणे प्रमाण **१२५-१५० किलो प्रति एकर** पर्यंत वाढवा. पेरणीनंतर अचूक **२१ दिवसांनी** पहिली सिंचन (CRI अवस्था) पूर्ण करा."
+      en: "ðŸŒ¾ **Wheat Tip**: If sowing late, increase your seed rate to **125-150 kg per acre**. Give the crucial Crown Root Initiation (CRI) irrigation exactly **21 days** after sowing.",
+      hi: "ðŸŒ¾ **à¤—à¥‡à¤¹à¥‚à¤‚ à¤•à¥€ à¤¸à¤²à¤¾à¤¹**: à¤¦à¥‡à¤°à¥€ à¤¸à¥‡ à¤¬à¥à¤µà¤¾à¤ˆ à¤•à¤°à¤¨à¥‡ à¤ªà¤° à¤¬à¥€à¤œ à¤¦à¤° à¤•à¥‹ à¤¬à¤¢à¤¼à¤¾à¤•à¤° **125-150 à¤•à¤¿à¤²à¥‹/à¤à¤•à¤¡à¤¼** à¤•à¤°à¥‡à¤‚à¥¤ à¤¬à¥à¤µà¤¾à¤ˆ à¤•à¥‡ à¤ à¥€à¤• **21 à¤¦à¤¿à¤¨ à¤¬à¤¾à¤¦** (CRI à¤šà¤°à¤£) à¤ªà¤¹à¤²à¥€ à¤¸à¤¿à¤‚à¤šà¤¾à¤ˆ à¤…à¤µà¤¶à¥à¤¯ à¤•à¤°à¥‡à¤‚à¥¤",
+      mr: "ðŸŒ¾ **à¤—à¤¹à¥‚ à¤Ÿà¥€à¤ª**: à¤‰à¤¶à¤¿à¤°à¤¾ à¤ªà¥‡à¤°à¤£à¥€à¤¸à¤¾à¤ à¥€ à¤¬à¤¿à¤¯à¤¾à¤£à¥‡ à¤ªà¥à¤°à¤®à¤¾à¤£ **à¥§à¥¨à¥«-à¥§à¥«à¥¦ à¤•à¤¿à¤²à¥‹ à¤ªà¥à¤°à¤¤à¤¿ à¤à¤•à¤°** à¤ªà¤°à¥à¤¯à¤‚à¤¤ à¤µà¤¾à¤¢à¤µà¤¾. à¤ªà¥‡à¤°à¤£à¥€à¤¨à¤‚à¤¤à¤° à¤…à¤šà¥‚à¤• **à¥¨à¥§ à¤¦à¤¿à¤µà¤¸à¤¾à¤‚à¤¨à¥€** à¤ªà¤¹à¤¿à¤²à¥€ à¤¸à¤¿à¤‚à¤šà¤¨ (CRI à¤…à¤µà¤¸à¥à¤¥à¤¾) à¤ªà¥‚à¤°à¥à¤£ à¤•à¤°à¤¾."
     },
     Cotton: {
-      en: "🌾 **Cotton Tip**: Install **5 pheromone traps per acre** to monitor Pink Bollworm. If egg counts exceed 1 per flower, spray **Profenofos 40% + Cypermethrin 4% @ 2ml/L**.",
-      hi: "🌾 **कपास की सलाह**: गुलाबी सुंडी की निगरानी के लिए **5 फेरोमोन जाल प्रति एकड़** लगाएं। यदि प्रकोप अधिक हो, तो **प्रोफेनोफॉस + सायपरमेथ्रिन @ 2 मिली/लीटर** का छिड़काव करें।",
-      mr: "🌾 **कापूस टीप**: गुलाबी बोंडअळीच्या निरीक्षणासाठी **प्रति एकर ५ फेरोमोन सापळे** लावा. प्रादुर्भाव दिसल्यास **प्रोफेनोफॉस + सायपरमेथ्रिन @ २ मिली/लीटर** फवारा."
+      en: "ðŸŒ¾ **Cotton Tip**: Install **5 pheromone traps per acre** to monitor Pink Bollworm. If egg counts exceed 1 per flower, spray **Profenofos 40% + Cypermethrin 4% @ 2ml/L**.",
+      hi: "ðŸŒ¾ **à¤•à¤ªà¤¾à¤¸ à¤•à¥€ à¤¸à¤²à¤¾à¤¹**: à¤—à¥à¤²à¤¾à¤¬à¥€ à¤¸à¥à¤‚à¤¡à¥€ à¤•à¥€ à¤¨à¤¿à¤—à¤°à¤¾à¤¨à¥€ à¤•à¥‡ à¤²à¤¿à¤ **5 à¤«à¥‡à¤°à¥‹à¤®à¥‹à¤¨ à¤œà¤¾à¤² à¤ªà¥à¤°à¤¤à¤¿ à¤à¤•à¤¡à¤¼** à¤²à¤—à¤¾à¤à¤‚à¥¤ à¤¯à¤¦à¤¿ à¤ªà¥à¤°à¤•à¥‹à¤ª à¤…à¤§à¤¿à¤• à¤¹à¥‹, à¤¤à¥‹ **à¤ªà¥à¤°à¥‹à¤«à¥‡à¤¨à¥‹à¤«à¥‰à¤¸ + à¤¸à¤¾à¤¯à¤ªà¤°à¤®à¥‡à¤¥à¥à¤°à¤¿à¤¨ @ 2 à¤®à¤¿à¤²à¥€/à¤²à¥€à¤Ÿà¤°** à¤•à¤¾ à¤›à¤¿à¤¡à¤¼à¤•à¤¾à¤µ à¤•à¤°à¥‡à¤‚à¥¤",
+      mr: "ðŸŒ¾ **à¤•à¤¾à¤ªà¥‚à¤¸ à¤Ÿà¥€à¤ª**: à¤—à¥à¤²à¤¾à¤¬à¥€ à¤¬à¥‹à¤‚à¤¡à¤…à¤³à¥€à¤šà¥à¤¯à¤¾ à¤¨à¤¿à¤°à¥€à¤•à¥à¤·à¤£à¤¾à¤¸à¤¾à¤ à¥€ **à¤ªà¥à¤°à¤¤à¤¿ à¤à¤•à¤° à¥« à¤«à¥‡à¤°à¥‹à¤®à¥‹à¤¨ à¤¸à¤¾à¤ªà¤³à¥‡** à¤²à¤¾à¤µà¤¾. à¤ªà¥à¤°à¤¾à¤¦à¥à¤°à¥à¤­à¤¾à¤µ à¤¦à¤¿à¤¸à¤²à¥à¤¯à¤¾à¤¸ **à¤ªà¥à¤°à¥‹à¤«à¥‡à¤¨à¥‹à¤«à¥‰à¤¸ + à¤¸à¤¾à¤¯à¤ªà¤°à¤®à¥‡à¤¥à¥à¤°à¤¿à¤¨ @ à¥¨ à¤®à¤¿à¤²à¥€/à¤²à¥€à¤Ÿà¤°** à¤«à¤µà¤¾à¤°à¤¾."
     }
   };
 
@@ -557,7 +583,7 @@ function simulateDailyTip(cropsList, location, season, language) {
   return cropTips[language] || cropTips.en;
 }
 
-// ─── FARM DIARY FINANCIAL ADVICE ───
+// â”€â”€â”€ FARM DIARY FINANCIAL ADVICE â”€â”€â”€
 export async function getDiaryAnalysis(context, apiKey) {
   if (!apiKey) {
     return simulateDiaryAnalysis(context);
@@ -595,27 +621,27 @@ function simulateDiaryAnalysis(context) {
   const balance = income - expense;
 
   if (lang === 'hi') {
-    return `### 📊 **कृषि वित्तीय विश्लेषण रिपोर्ट** (कृषि मित्र एआई)
+    return `### ðŸ“Š **à¤•à¥ƒà¤·à¤¿ à¤µà¤¿à¤¤à¥à¤¤à¥€à¤¯ à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ** (à¤•à¥ƒà¤·à¤¿ à¤®à¤¿à¤¤à¥à¤° à¤à¤†à¤ˆ)
   
-*   **कुल आय**: ₹${income.toLocaleString()}
-*   **कुल खर्च**: ₹${expense.toLocaleString()}
-*   **शुद्ध लाभ/हानि**: **₹${balance.toLocaleString()}** (${balance >= 0 ? '🟢 मुनाफा' : '🔴 घाटा'})
+*   **à¤•à¥à¤² à¤†à¤¯**: â‚¹${income.toLocaleString()}
+*   **à¤•à¥à¤² à¤–à¤°à¥à¤š**: â‚¹${expense.toLocaleString()}
+*   **à¤¶à¥à¤¦à¥à¤§ à¤²à¤¾à¤­/à¤¹à¤¾à¤¨à¤¿**: **â‚¹${balance.toLocaleString()}** (${balance >= 0 ? 'ðŸŸ¢ à¤®à¥à¤¨à¤¾à¤«à¤¾' : 'ðŸ”´ à¤˜à¤¾à¤Ÿà¤¾'})
 
-**खर्च के प्रमुख क्षेत्र:**
-1.  उर्वरक एवं कीटनाशक खरीद
-2.  मजदूरी एवं जुताई खर्च
+**à¤–à¤°à¥à¤š à¤•à¥‡ à¤ªà¥à¤°à¤®à¥à¤– à¤•à¥à¤·à¥‡à¤¤à¥à¤°:**
+1.  à¤‰à¤°à¥à¤µà¤°à¤• à¤à¤µà¤‚ à¤•à¥€à¤Ÿà¤¨à¤¾à¤¶à¤• à¤–à¤°à¥€à¤¦
+2.  à¤®à¤œà¤¦à¥‚à¤°à¥€ à¤à¤µà¤‚ à¤œà¥à¤¤à¤¾à¤ˆ à¤–à¤°à¥à¤š
 
-**कृषि मित्र की सिफारिशें:**
-1.  **खाद का संतुलित उपयोग**: अंधाधुंध यूरिया डालने के बजाय मृदा परीक्षण रिपोर्ट के अनुसार ही उर्वरक डालें, जिससे खर्च में 20% तक की कमी आएगी।
-2.  **जैविक खाद का मिश्रण**: खेत में गोबर खाद या केंचुआ खाद का प्रयोग बढ़ाएं, जिससे रासायनिक खादों पर निर्भरता कम होगी।
-3.  **सामूहिक कृषि यंत्र**: ट्रैक्टर या भारी मशीनरी किराए पर लेने के बजाय सरकारी कस्टम हायरिंग सेंटर का उपयोग करें।`;
+**à¤•à¥ƒà¤·à¤¿ à¤®à¤¿à¤¤à¥à¤° à¤•à¥€ à¤¸à¤¿à¤«à¤¾à¤°à¤¿à¤¶à¥‡à¤‚:**
+1.  **à¤–à¤¾à¤¦ à¤•à¤¾ à¤¸à¤‚à¤¤à¥à¤²à¤¿à¤¤ à¤‰à¤ªà¤¯à¥‹à¤—**: à¤…à¤‚à¤§à¤¾à¤§à¥à¤‚à¤§ à¤¯à¥‚à¤°à¤¿à¤¯à¤¾ à¤¡à¤¾à¤²à¤¨à¥‡ à¤•à¥‡ à¤¬à¤œà¤¾à¤¯ à¤®à¥ƒà¤¦à¤¾ à¤ªà¤°à¥€à¤•à¥à¤·à¤£ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ à¤•à¥‡ à¤…à¤¨à¥à¤¸à¤¾à¤° à¤¹à¥€ à¤‰à¤°à¥à¤µà¤°à¤• à¤¡à¤¾à¤²à¥‡à¤‚, à¤œà¤¿à¤¸à¤¸à¥‡ à¤–à¤°à¥à¤š à¤®à¥‡à¤‚ 20% à¤¤à¤• à¤•à¥€ à¤•à¤®à¥€ à¤†à¤à¤—à¥€à¥¤
+2.  **à¤œà¥ˆà¤µà¤¿à¤• à¤–à¤¾à¤¦ à¤•à¤¾ à¤®à¤¿à¤¶à¥à¤°à¤£**: à¤–à¥‡à¤¤ à¤®à¥‡à¤‚ à¤—à¥‹à¤¬à¤° à¤–à¤¾à¤¦ à¤¯à¤¾ à¤•à¥‡à¤‚à¤šà¥à¤† à¤–à¤¾à¤¦ à¤•à¤¾ à¤ªà¥à¤°à¤¯à¥‹à¤— à¤¬à¤¢à¤¼à¤¾à¤à¤‚, à¤œà¤¿à¤¸à¤¸à¥‡ à¤°à¤¾à¤¸à¤¾à¤¯à¤¨à¤¿à¤• à¤–à¤¾à¤¦à¥‹à¤‚ à¤ªà¤° à¤¨à¤¿à¤°à¥à¤­à¤°à¤¤à¤¾ à¤•à¤® à¤¹à¥‹à¤—à¥€à¥¤
+3.  **à¤¸à¤¾à¤®à¥‚à¤¹à¤¿à¤• à¤•à¥ƒà¤·à¤¿ à¤¯à¤‚à¤¤à¥à¤°**: à¤Ÿà¥à¤°à¥ˆà¤•à¥à¤Ÿà¤° à¤¯à¤¾ à¤­à¤¾à¤°à¥€ à¤®à¤¶à¥€à¤¨à¤°à¥€ à¤•à¤¿à¤°à¤¾à¤ à¤ªà¤° à¤²à¥‡à¤¨à¥‡ à¤•à¥‡ à¤¬à¤œà¤¾à¤¯ à¤¸à¤°à¤•à¤¾à¤°à¥€ à¤•à¤¸à¥à¤Ÿà¤® à¤¹à¤¾à¤¯à¤°à¤¿à¤‚à¤— à¤¸à¥‡à¤‚à¤Ÿà¤° à¤•à¤¾ à¤‰à¤ªà¤¯à¥‹à¤— à¤•à¤°à¥‡à¤‚à¥¤`;
   }
 
-  return `### 📊 **Farm Financial Analysis Report** (Krushi Mitra AI)
+  return `### ðŸ“Š **Farm Financial Analysis Report** (Krushi Mitra AI)
   
-*   **Total Revenue**: ₹${income.toLocaleString()}
-*   **Total Expenses**: ₹${expense.toLocaleString()}
-*   **Net Profit/Loss**: **₹${balance.toLocaleString()}** (${balance >= 0 ? '🟢 Profit' : '🔴 Loss'})
+*   **Total Revenue**: â‚¹${income.toLocaleString()}
+*   **Total Expenses**: â‚¹${expense.toLocaleString()}
+*   **Net Profit/Loss**: **â‚¹${balance.toLocaleString()}** (${balance >= 0 ? 'ðŸŸ¢ Profit' : 'ðŸ”´ Loss'})
 
 **Major Cost Centers:**
 1.  Input Purchases (Fertilizers/Seeds)
@@ -627,7 +653,7 @@ function simulateDiaryAnalysis(context) {
 3.  **Log Daily Machinery Hours**: Track fuel usage on daily tillage runs to optimize tractor operations.`;
 }
 
-// ─── AI MARKETPLACE DESCRIPTION WRITER ───
+// â”€â”€â”€ AI MARKETPLACE DESCRIPTION WRITER â”€â”€â”€
 export async function generateListingDescription(details, language, apiKey) {
   if (!apiKey) {
     return simulateListingDescription(details, language);
@@ -640,7 +666,7 @@ Crop Name: ${details.commodity}
 Variety: ${details.variety || 'Local'}
 Grade/Quality: ${details.quality || 'A'}
 Quantity: ${details.quantity} ${details.unit}
-Price: ₹${details.pricePerUnit} per ${details.unit}
+Price: â‚¹${details.pricePerUnit} per ${details.unit}
 Location: ${details.location}
 Organic: ${details.isOrganic ? 'Yes' : 'No'}
 Negotiable: ${details.isNegotiable ? 'Yes' : 'No'}
@@ -665,17 +691,17 @@ function simulateListingDescription(details, language) {
   const { commodity, variety, quality, quantity, unit, pricePerUnit, location, isOrganic } = details;
   
   if (language === 'hi') {
-    return `🌾 **ताज़ा और उच्च गुणवत्ता वाला ${commodity} बिक्री के लिए उपलब्ध!**
-📍 **स्थान**: ${location}
-✨ **विवरण**: यह ${variety || 'स्थानीय'} किस्म का ग्रेड-${quality} ${commodity} है। ${isOrganic ? 'पूर्ण रूप से जैविक (गोबर खाद से तैयार)' : 'पूरी तरह से सुखाया और साफ किया गया है'}। कुल मात्रा ${quantity} ${unit} है। भाव ₹${pricePerUnit}/${unit} (वार्तालाप योग्य)। संपर्क करें!`;
+    return `ðŸŒ¾ **à¤¤à¤¾à¤œà¤¼à¤¾ à¤”à¤° à¤‰à¤šà¥à¤š à¤—à¥à¤£à¤µà¤¤à¥à¤¤à¤¾ à¤µà¤¾à¤²à¤¾ ${commodity} à¤¬à¤¿à¤•à¥à¤°à¥€ à¤•à¥‡ à¤²à¤¿à¤ à¤‰à¤ªà¤²à¤¬à¥à¤§!**
+ðŸ“ **à¤¸à¥à¤¥à¤¾à¤¨**: ${location}
+âœ¨ **à¤µà¤¿à¤µà¤°à¤£**: à¤¯à¤¹ ${variety || 'à¤¸à¥à¤¥à¤¾à¤¨à¥€à¤¯'} à¤•à¤¿à¤¸à¥à¤® à¤•à¤¾ à¤—à¥à¤°à¥‡à¤¡-${quality} ${commodity} à¤¹à¥ˆà¥¤ ${isOrganic ? 'à¤ªà¥‚à¤°à¥à¤£ à¤°à¥‚à¤ª à¤¸à¥‡ à¤œà¥ˆà¤µà¤¿à¤• (à¤—à¥‹à¤¬à¤° à¤–à¤¾à¤¦ à¤¸à¥‡ à¤¤à¥ˆà¤¯à¤¾à¤°)' : 'à¤ªà¥‚à¤°à¥€ à¤¤à¤°à¤¹ à¤¸à¥‡ à¤¸à¥à¤–à¤¾à¤¯à¤¾ à¤”à¤° à¤¸à¤¾à¤« à¤•à¤¿à¤¯à¤¾ à¤—à¤¯à¤¾ à¤¹à¥ˆ'}à¥¤ à¤•à¥à¤² à¤®à¤¾à¤¤à¥à¤°à¤¾ ${quantity} ${unit} à¤¹à¥ˆà¥¤ à¤­à¤¾à¤µ â‚¹${pricePerUnit}/${unit} (à¤µà¤¾à¤°à¥à¤¤à¤¾à¤²à¤¾à¤ª à¤¯à¥‹à¤—à¥à¤¯)à¥¤ à¤¸à¤‚à¤ªà¤°à¥à¤• à¤•à¤°à¥‡à¤‚!`;
   }
   
-  return `🌾 **Premium Quality ${commodity} Available for Direct Sale!**
-📍 **Location**: ${location}
-✨ **Details**: Grade-${quality} ${commodity} of the ${variety || 'Local'} variety. ${isOrganic ? '100% Organically grown' : 'Well-cleaned and dried with optimal moisture content'}. Total quantity available: ${quantity} ${unit}. Price: ₹${pricePerUnit}/${unit}. Ready for pickup/delivery immediately.`;
+  return `ðŸŒ¾ **Premium Quality ${commodity} Available for Direct Sale!**
+ðŸ“ **Location**: ${location}
+âœ¨ **Details**: Grade-${quality} ${commodity} of the ${variety || 'Local'} variety. ${isOrganic ? '100% Organically grown' : 'Well-cleaned and dried with optimal moisture content'}. Total quantity available: ${quantity} ${unit}. Price: â‚¹${pricePerUnit}/${unit}. Ready for pickup/delivery immediately.`;
 }
 
-// ─── 1. COMMUNITY AI CONTENT MODERATION MODEL ───
+// â”€â”€â”€ 1. COMMUNITY AI CONTENT MODERATION MODEL â”€â”€â”€
 export async function moderateContent(text, apiKey = null) {
   if (!text || !text.trim()) {
     return { isFlagged: false, category: 'General', reason: '' };
@@ -736,7 +762,7 @@ Respond ONLY in JSON format:
   }
 }
 
-// ─── 3. SOIL ADVISOR & NPK CALCULATION ENGINE ───
+// â”€â”€â”€ 3. SOIL ADVISOR & NPK CALCULATION ENGINE â”€â”€â”€
 export async function calculateSoilNPK(soilData, cropName, apiKey = null) {
   const { nitrogen = 200, phosphorus = 20, potassium = 150, ph = 6.5 } = soilData;
   
@@ -789,14 +815,14 @@ Return JSON ONLY:
   }
 }
 
-// ─── 4. MANDI PRICE FORECASTING & TRENDS MODEL ───
+// â”€â”€â”€ 4. MANDI PRICE FORECASTING & TRENDS MODEL â”€â”€â”€
 export async function predictMarketTrends(commodity, market = 'Nashik', priceHistory = [], apiKey = null) {
   if (!apiKey) {
     return {
       trend: 'Bullish',
       volatility: 'Moderate',
       advisory: `Demand for ${commodity} in ${market} is expected to rise by 5-8% over the next 15 days due to festive seasonal demand.`,
-      targetPriceRange: `₹2,400 - ₹2,750 / Quintal`,
+      targetPriceRange: `â‚¹2,400 - â‚¹2,750 / Quintal`,
       confidence: 85
     };
   }
@@ -809,7 +835,7 @@ Return JSON ONLY:
   "trend": "Bullish" | "Bearish" | "Stable",
   "volatility": "High" | "Moderate" | "Low",
   "advisory": "Actionable farmer advice (Hold/Sell)",
-  "targetPriceRange": "₹Expected range per quintal",
+  "targetPriceRange": "â‚¹Expected range per quintal",
   "confidence": 85
 }`;
     const raw = await callGemini(prompt, apiKey, SYSTEM_PROMPT);

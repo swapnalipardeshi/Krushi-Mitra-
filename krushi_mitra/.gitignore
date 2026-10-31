@@ -48,3 +48,10 @@ app.*.map.json
 *.txt
 nuget.exe
 .env
+# Widget Preview related
+.widget_preview/
+
+!.env.example
+*.jks
+*.keystore
+key.properties

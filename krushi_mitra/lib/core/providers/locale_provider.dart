@@ -1,7 +1,7 @@
 // 🌐 Krushi Mitra — Global App Language State & Persistence Provider (Riverpod)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/supabase_service.dart';
 
 const String _kLanguagePrefKey = 'app_language';
 
@@ -28,12 +28,12 @@ class AppLanguageNotifier extends StateNotifier<String> {
       await prefs.setString(_kLanguagePrefKey, langCode);
     } catch (_) {}
 
-    if (userId != null && userId.isNotEmpty) {
+    if (userId != null && userId.isNotEmpty && SupabaseService.isInitialized) {
       try {
-        await FirebaseFirestore.instance
-            .collection('farmers')
-            .doc(userId)
-            .update({'language': langCode});
+        await SupabaseService.client
+            ?.from('farmers')
+            .update({'preferred_language': langCode})
+            .eq('id', userId);
       } catch (_) {}
     }
   }

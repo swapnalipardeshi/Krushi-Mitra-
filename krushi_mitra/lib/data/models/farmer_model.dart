@@ -37,19 +37,19 @@ class Farmer {
 
   factory Farmer.fromJson(Map<String, dynamic> json) {
     return Farmer(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      photoUrl: json['photoUrl'] as String?,
-      state: json['state'] as String,
-      district: json['district'] as String,
-      landSize: (json['landSize'] as num).toDouble(),
-      cropsGrown: List<String>.from(json['cropsGrown'] ?? []),
-      preferredLanguage: json['preferredLanguage'] as String? ?? 'en',
-      soilType: json['soilType'] as String?,
-      irrigationSource: json['irrigationSource'] as String?,
-      weatherAlerts: json['weatherAlerts'] as bool? ?? true,
-      schemeAlerts: json['schemeAlerts'] as bool? ?? true,
-      priceAlerts: json['priceAlerts'] as bool? ?? false,
+      id: (json['id'] ?? 'farmer_default').toString(),
+      name: (json['name'] ?? 'Kisan Mitra').toString(),
+      photoUrl: json['photoUrl'] as String? ?? json['photo_url'] as String?,
+      state: (json['state'] ?? 'Maharashtra').toString(),
+      district: (json['district'] ?? 'Nashik').toString(),
+      landSize: (json['landSize'] ?? json['land_size'] as num?)?.toDouble() ?? 2.5,
+      cropsGrown: List<String>.from(json['cropsGrown'] ?? json['crops_grown'] ?? ['Wheat', 'Onion', 'Tomato', 'Soyabean']),
+      preferredLanguage: (json['preferredLanguage'] ?? json['preferred_language'] as String?) ?? 'hi',
+      soilType: json['soilType'] as String? ?? json['soil_type'] as String?,
+      irrigationSource: json['irrigationSource'] as String? ?? json['irrigation_source'] as String?,
+      weatherAlerts: json['weatherAlerts'] ?? json['weather_alerts'] as bool? ?? true,
+      schemeAlerts: json['schemeAlerts'] ?? json['scheme_alerts'] as bool? ?? true,
+      priceAlerts: json['priceAlerts'] ?? json['price_alerts'] as bool? ?? false,
     );
   }
 
@@ -58,16 +58,25 @@ class Farmer {
       'id': id,
       'name': name,
       'photoUrl': photoUrl,
+      'photo_url': photoUrl,
       'state': state,
       'district': district,
       'landSize': landSize,
+      'land_size': landSize,
       'cropsGrown': cropsGrown,
+      'crops_grown': cropsGrown,
       'preferredLanguage': preferredLanguage,
+      'preferred_language': preferredLanguage,
       'soilType': soilType,
+      'soil_type': soilType,
       'irrigationSource': irrigationSource,
+      'irrigation_source': irrigationSource,
       'weatherAlerts': weatherAlerts,
+      'weather_alerts': weatherAlerts,
       'schemeAlerts': schemeAlerts,
+      'scheme_alerts': schemeAlerts,
       'priceAlerts': priceAlerts,
+      'price_alerts': priceAlerts,
     };
   }
 

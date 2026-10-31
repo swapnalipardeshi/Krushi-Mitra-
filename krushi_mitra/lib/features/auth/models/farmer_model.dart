@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 class FarmerModel extends Equatable {
@@ -43,37 +42,41 @@ class FarmerModel extends Equatable {
         createdAt: DateTime.now(),
       );
 
-  factory FarmerModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory FarmerModel.fromJson(Map<String, dynamic> data) {
     return FarmerModel(
-      id: doc.id,
+      id: data['id'] ?? '',
       name: data['name'] ?? '',
       phone: data['phone'] ?? '',
-      photoUrl: data['photoUrl'],
+      photoUrl: data['photoUrl'] ?? data['photo_url'],
       village: data['village'] ?? '',
       district: data['district'] ?? '',
       state: data['state'] ?? 'Maharashtra',
-      crops: List<String>.from(data['crops'] ?? []),
-      landAcres: (data['landAcres'] as num?)?.toDouble() ?? 0,
-      language: data['language'] ?? 'hi',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      lastActive: (data['lastActive'] as Timestamp?)?.toDate(),
+      crops: List<String>.from(data['crops'] ?? data['crops_grown'] ?? []),
+      landAcres: (data['landAcres'] ?? data['land_size'] as num?)?.toDouble() ?? 0.0,
+      language: data['language'] ?? data['preferred_language'] ?? 'hi',
+      createdAt: data['createdAt'] != null
+          ? DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      lastActive: data['lastActive'] != null
+          ? DateTime.tryParse(data['lastActive'].toString())
+          : null,
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'phone': phone,
-      'photoUrl': photoUrl,
+      'photo_url': photoUrl,
       'village': village,
       'district': district,
       'state': state,
-      'crops': crops,
-      'landAcres': landAcres,
-      'language': language,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'lastActive': FieldValue.serverTimestamp(),
+      'crops_grown': crops,
+      'land_size': landAcres,
+      'preferred_language': language,
+      'created_at': createdAt.toIso8601String(),
+      'last_active': lastActive?.toIso8601String(),
     };
   }
 
@@ -107,10 +110,19 @@ class FarmerModel extends Equatable {
     );
   }
 
-  String get cropsList => crops.join(', ');
-  String get initials =>
-      name.isNotEmpty ? name.trim().split(' ').map((w) => w[0]).take(2).join().toUpperCase() : 'FM';
-
   @override
-  List<Object?> get props => [id, name, phone, district, state, crops, landAcres, language];
+  List<Object?> get props => [
+        id,
+        name,
+        phone,
+        photoUrl,
+        village,
+        district,
+        state,
+        crops,
+        landAcres,
+        language,
+        createdAt,
+        lastActive,
+      ];
 }

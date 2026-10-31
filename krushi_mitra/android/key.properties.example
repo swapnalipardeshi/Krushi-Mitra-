@@ -1,0 +1,13 @@
+# ====================================================================
+# Android Release Signing Configuration Example (key.properties)
+# ====================================================================
+# To sign your release APK or Android App Bundle (AAB):
+# 1. Generate an upload keystore:
+#    keytool -genkey -v -keystore app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+# 2. Copy this file to 'android/key.properties' and fill in your values:
+# ====================================================================
+keyAlias=upload
+keyPassword=your_keystore_password
+storeFile=upload-keystore.jks
+storePassword=your_keystore_password
+

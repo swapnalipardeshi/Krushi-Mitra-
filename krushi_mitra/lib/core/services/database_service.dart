@@ -1,42 +1,35 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../data/models/farmer_model.dart';
 import '../../data/models/post_model.dart';
 import '../../data/models/farm_diary_model.dart';
+import '../../features/marketplace/models/listing_model.dart';
+import 'supabase_service.dart';
 
 class DatabaseService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final SupabaseService _supabase = SupabaseService();
+
+  // Local fallback profile so app functions 100% offline
+  Farmer getLocalFallbackProfile([String? uid]) {
+    return _supabase.getLocalFallbackProfile(uid);
+  }
 
   // --- Farmer Profile ---
-  
+
   Future<void> saveFarmerProfile(Farmer farmer) async {
     try {
-      await _db.collection('farmers').doc(farmer.id).set(farmer.toJson(), SetOptions(merge: true));
+      await _supabase.saveFarmerProfile(farmer);
     } catch (e) {
-      debugPrint("Firestore Save Error: $e");
-      rethrow;
+      debugPrint("DatabaseService saveFarmerProfile error: $e");
     }
   }
 
   Future<Farmer?> getFarmerProfile(String uid) async {
     try {
-      final doc = await _db.collection('farmers').doc(uid).get(
-        const GetOptions(source: Source.serverAndCache)
-      ).timeout(const Duration(seconds: 10));
-      
-      if (doc.exists && doc.data() != null) {
-        return Farmer.fromJson(doc.data()!);
-      }
-      return null;
+      return await _supabase.getFarmerProfile(uid);
     } catch (e) {
-      debugPrint("Firestore Get Profile Error: $e");
-      try {
-        final cachedDoc = await _db.collection('farmers').doc(uid).get(const GetOptions(source: Source.cache));
-        if (cachedDoc.exists && cachedDoc.data() != null) {
-          return Farmer.fromJson(cachedDoc.data()!);
-        }
-      } catch (_) {}
-      rethrow;
+      debugPrint("DatabaseService getFarmerProfile error: $e");
+      return getLocalFallbackProfile(uid);
     }
   }
 
@@ -44,29 +37,26 @@ class DatabaseService {
 
   Future<void> createPost(Post post) async {
     try {
-      await _db.collection('posts').doc(post.id).set(post.toJson());
+      await _supabase.createPost(post);
     } catch (e) {
-      debugPrint("Firestore Post Error: $e");
-      rethrow;
+      debugPrint("DatabaseService createPost error: $e");
     }
   }
 
   Stream<List<Post>> getPosts() {
-    return _db
-        .collection('posts')
-        .orderBy('createdAt', descending: true)
-        .snapshots(includeMetadataChanges: true)
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Post.fromJson(doc.data())).toList());
+    try {
+      return _supabase.getPostsStream();
+    } catch (e) {
+      debugPrint("DatabaseService getPosts stream error: $e");
+      return Stream.fromFuture(_supabase.getPosts());
+    }
   }
 
   Future<void> likePost(String postId) async {
     try {
-      await _db.collection('posts').doc(postId).update({
-        'likes': FieldValue.increment(1),
-      });
+      await _supabase.likePost(postId);
     } catch (e) {
-       debugPrint("Firestore Like Error: $e");
+      debugPrint("DatabaseService likePost error: $e");
     }
   }
 
@@ -74,71 +64,70 @@ class DatabaseService {
 
   Future<void> addDiaryEntry(FarmDiaryEntry entry) async {
     try {
-      await _db
-          .collection('farmers')
-          .doc(entry.farmerId)
-          .collection('diary')
-          .doc(entry.id)
-          .set(entry.toJson());
+      await _supabase.addDiaryEntry(entry);
     } catch (e) {
-      debugPrint("Firestore Diary Save Error: $e");
-      rethrow;
+      debugPrint("DatabaseService addDiaryEntry error: $e");
     }
   }
 
   Stream<List<FarmDiaryEntry>> getDiaryEntries(String farmerId) {
-    return _db
-        .collection('farmers')
-        .doc(farmerId)
-        .collection('diary')
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => FarmDiaryEntry.fromJson(doc.data())).toList());
+    try {
+      return _supabase.getDiaryEntriesStream(farmerId);
+    } catch (e) {
+      debugPrint("DatabaseService getDiaryEntries stream error: $e");
+      return Stream.fromFuture(_supabase.getDiaryEntries(farmerId));
+    }
   }
 
   Future<void> deleteDiaryEntry(String farmerId, String entryId) async {
     try {
-      await _db.collection('farmers').doc(farmerId).collection('diary').doc(entryId).delete();
+      await _supabase.deleteDiaryEntry(farmerId, entryId);
     } catch (e) {
-      debugPrint("Firestore Diary Delete Error: $e");
+      debugPrint("DatabaseService deleteDiaryEntry error: $e");
     }
   }
 
   // --- Marketplace Listings ---
 
-  Future<void> addMarketListing(Map<String, dynamic> listing) async {
+  Future<void> addMarketListing(MarketplaceListing listing) async {
     try {
-      await _db.collection('marketplace').doc(listing['id']).set(listing);
+      await _supabase.addMarketListing(listing);
     } catch (e) {
-      debugPrint("Firestore Marketplace Add Error: $e");
-      rethrow;
+      debugPrint("DatabaseService addMarketListing error: $e");
     }
   }
 
-  Stream<List<Map<String, dynamic>>> getMarketListings() {
-    return _db
-        .collection('marketplace')
-        .orderBy('dateListed', descending: true)
-        .snapshots(includeMetadataChanges: true)
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => doc.data()).toList());
+  Stream<List<MarketplaceListing>> getMarketListingsStream() {
+    try {
+      return _supabase.getMarketListingsStream();
+    } catch (e) {
+      debugPrint("DatabaseService getMarketListingsStream error: $e");
+      return Stream.fromFuture(_supabase.getMarketListings());
+    }
+  }
+
+  Future<List<MarketplaceListing>> getMarketListings() async {
+    try {
+      return await _supabase.getMarketListings();
+    } catch (e) {
+      debugPrint("DatabaseService getMarketListings error: $e");
+      return [];
+    }
   }
 
   Future<void> deleteMarketListing(String listingId) async {
     try {
-      await _db.collection('marketplace').doc(listingId).delete();
+      await _supabase.deleteMarketListing(listingId);
     } catch (e) {
-      debugPrint("Firestore Marketplace Delete Error: $e");
-      rethrow;
+      debugPrint("DatabaseService deleteMarketListing error: $e");
     }
   }
 
   Future<void> markListingSold(String listingId) async {
     try {
-      await _db.collection('marketplace').doc(listingId).update({'isSold': true});
+      await _supabase.markListingSold(listingId);
     } catch (e) {
-      debugPrint("Firestore Mark Sold Error: $e");
+      debugPrint("DatabaseService markListingSold error: $e");
     }
   }
 }

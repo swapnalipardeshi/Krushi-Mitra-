@@ -18,19 +18,40 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Krushi Mitra - AI-Powered Farmer Assistant for Indian Farmers">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="krushi_mitra">
+  <meta name="apple-mobile-web-app-title" content="Krushi Mitra Pro">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>krushi_mitra</title>
+  <title>Krushi Mitra Pro</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Firebase SDK — required for Flutter Web + Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics-compat.js"></script>
+
+  <script>
+    // Firebase configuration for Flutter Web
+    const firebaseConfig = {
+      apiKey: "AIzaSyDd5Q8iDR0hzuXRDqsowPgF534O_g3kKEo",
+      authDomain: "krushi-mitra-dd431.firebaseapp.com",
+      projectId: "krushi-mitra-dd431",
+      storageBucket: "krushi-mitra-dd431.firebasestorage.app",
+      messagingSenderId: "1024024620084",
+      appId: "1:1024024620084:web:9736c2a0350d5fba006e61"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
 </head>
 <body>
   <!--

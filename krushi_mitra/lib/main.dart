@@ -1,12 +1,10 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:krushi_mitra/core/services/ai_service.dart';
 import 'package:krushi_mitra/core/services/market_service.dart';
 import 'package:krushi_mitra/core/services/weather_service.dart';
@@ -14,47 +12,52 @@ import 'package:krushi_mitra/core/services/notification_service.dart';
 import 'app.dart';
 
 void main() async {
-  // Use runZonedGuarded to catch all global errors and report to Crashlytics
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
-    
-    // 1. Load environment variables
+
+    // Global Flutter error handler
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      debugPrint('FLUTTER GLOBAL ERROR: ${details.exceptionAsString()}');
+    };
+
+    // 1. Load environment variables (.env)
     try {
       await dotenv.load(fileName: ".env");
+      debugPrint("Environment (.env) loaded successfully.");
     } catch (e) {
-      debugPrint("Dotenv load warning: $e. Ensure .env exists in root.");
-    }
-    
-    // 2. Initialize Firebase (Fail-safe)
-    try {
-      debugPrint("Initializing Firebase...");
-      await Firebase.initializeApp();
-      
-      // Initialize Analytics
-      FirebaseAnalytics.instance.logAppOpen();
-      
-      // Initialize Crashlytics
-      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-      
-      // Enable Firestore offline persistence
-      FirebaseFirestore.instance.settings = const Settings(
-        persistenceEnabled: true,
-        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-      );
-      debugPrint("Firebase services initialized successfully");
-    } catch (e) {
-      debugPrint("FIREBASE INITIALIZATION FAILED: $e");
-      debugPrint("Check your google-services.json and internet connection.");
+      debugPrint("Dotenv load notice: $e. Ensure .env exists in root.");
     }
 
-    // 3. Initialize Notifications
+    // 2. Initialize Supabase as Primary Backend (Auth, Database, Storage)
+    final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? 'https://jsqmqaqirtxvclsyjimd.supabase.co';
+    final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+    if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
+      try {
+        await Supabase.initialize(
+          url: supabaseUrl,
+          anonKey: supabaseKey,
+          authOptions: const FlutterAuthClientOptions(
+            authFlowType: AuthFlowType.pkce,
+            autoRefreshToken: true,
+          ),
+        );
+        debugPrint("Supabase initialized as primary backend!");
+      } catch (e) {
+        debugPrint("Supabase initialization error: $e");
+      }
+    } else {
+      debugPrint("WARNING: Supabase URL or Anon Key is missing from .env!");
+    }
+
+    // 3. Initialize FCM Push Notifications (Fail-safe, non-blocking)
     try {
       await NotificationService().initialize();
     } catch (e) {
-      debugPrint("Notification init error: $e");
+      debugPrint("Notification init notice: $e");
     }
 
-    // 4. Initialize SharedPreferences
+    // 4. Initialize Local SharedPreferences
     try {
       await SharedPreferences.getInstance();
     } catch (e) {
@@ -64,11 +67,10 @@ void main() async {
     // 5. Initialize Core Services (Fail-safe)
     try {
       final aiService = AIService();
-      aiService.initialize(); // GeminiService internally reads GEMINI_KEY_1..5
-      
+      aiService.initialize();
       MarketService().initialize();
       WeatherService().initialize();
-      debugPrint("System services initialized");
+      debugPrint("Krushi Mitra core domain services initialized.");
     } catch (e) {
       debugPrint("Service init warning: $e");
     }
@@ -79,8 +81,9 @@ void main() async {
       ),
     );
   }, (error, stack) {
-    // Record all uncaught errors to Crashlytics
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    debugPrint("CRITICAL GLOBAL ERROR: $error");
+    debugPrint("CRITICAL ASYNC ROOT ERROR: $error");
+    if (kDebugMode) {
+      debugPrint(stack.toString());
+    }
   });
 }

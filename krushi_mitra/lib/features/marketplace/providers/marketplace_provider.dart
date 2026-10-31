@@ -5,10 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/services/ai_service.dart';
 import '../models/listing_model.dart';
 
-/// Helper to merge user-created local listings with downloaded/fallback listings
+/// Helper to merge user-created local listings with downloaded listings
 List<MarketplaceListing> _mergeListings(List<MarketplaceListing> primary, List<MarketplaceListing> secondary) {
   final Map<String, MarketplaceListing> map = {};
   for (final l in secondary) {
@@ -54,7 +53,7 @@ Future<void> saveLocalListings(List<MarketplaceListing> listings) async {
 Future<List<MarketplaceListing>> getCachedMarketplace() async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString('cached_firestore_listings');
+    final jsonStr = prefs.getString('cached_supabase_marketplace');
     if (jsonStr != null) {
       final List list = json.decode(jsonStr);
       return list.map((e) => MarketplaceListing.fromJson(e as Map<String, dynamic>)).toList();
@@ -73,7 +72,7 @@ Future<void> saveCachedMarketplace(List<MarketplaceListing> listings) async {
       map['dateListed'] = e.dateListed.toIso8601String();
       return map;
     }).toList();
-    await prefs.setString('cached_firestore_listings', json.encode(jsonList));
+    await prefs.setString('cached_supabase_marketplace', json.encode(jsonList));
   } catch (e) {
     debugPrint('Error saving cached marketplace listings: $e');
   }
@@ -98,56 +97,56 @@ List<MarketplaceListing> getStaticFallbackListings() {
       phoneNumber: '9876543210',
       dateListed: now.subtract(const Duration(hours: 4)),
       isVerified: true,
-      isOrganic: true,
+      isOrganic: false,
       deliveryAvailable: true,
       isNegotiable: true,
     ),
     MarketplaceListing(
       id: 'static_2',
       sellerId: 'static_seller_2',
-      farmerName: 'Sanjay Patil',
+      farmerName: 'Prakash Patil',
       commodity: 'Onion',
       quantity: 80.0,
       unit: 'Quintal',
-      pricePerUnit: 1400.0,
+      pricePerUnit: 1450.0,
       quality: 'A+',
-      location: 'Pune, Maharashtra',
-      description: 'Freshly harvested Nasik Red onions. Well-graded, medium size, long shelf life.',
-      imageUrl: 'https://images.unsplash.com/photo-1508747703725-719ae2c226e1?q=80&w=500&auto=format&fit=crop',
-      phoneNumber: '9823456789',
+      location: 'Pimpalgaon, Maharashtra',
+      description: 'Nashik Red onions, premium grade, cured properly for 4-5 months shelf life. Direct from farm.',
+      imageUrl: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=500&auto=format&fit=crop',
+      phoneNumber: '9822334455',
       dateListed: now.subtract(const Duration(hours: 8)),
       isVerified: true,
-      isOrganic: false,
-      deliveryAvailable: true,
-      isNegotiable: true,
-    ),
-    MarketplaceListing(
-      id: 'static_3',
-      sellerId: 'static_seller_3',
-      farmerName: 'Anil Shinde',
-      commodity: 'Tomato',
-      quantity: 500.0,
-      unit: 'Kg',
-      pricePerUnit: 18.0,
-      quality: 'B',
-      location: 'Satara, Maharashtra',
-      description: 'Firm hybrid tomatoes, perfect for transportation. Picked early morning.',
-      imageUrl: 'https://images.unsplash.com/photo-1595855759920-86582396756a?q=80&w=500&auto=format&fit=crop',
-      phoneNumber: '9854321098',
-      dateListed: now.subtract(const Duration(hours: 12)),
-      isVerified: false,
       isOrganic: true,
       deliveryAvailable: false,
       isNegotiable: true,
     ),
     MarketplaceListing(
+      id: 'static_3',
+      sellerId: 'static_seller_3',
+      farmerName: 'Sanjay Shinde',
+      commodity: 'Tomato',
+      quantity: 40.0,
+      unit: 'Quintal',
+      pricePerUnit: 1600.0,
+      quality: 'A',
+      location: 'Narayangaon, Pune',
+      description: 'Freshly harvested Abhinav variety tomatoes. Firm skin, deep red color, suitable for long-distance transport.',
+      imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=500&auto=format&fit=crop',
+      phoneNumber: '9765432100',
+      dateListed: now.subtract(const Duration(hours: 14)),
+      isVerified: false,
+      isOrganic: false,
+      deliveryAvailable: true,
+      isNegotiable: false,
+    ),
+    MarketplaceListing(
       id: 'static_4',
       sellerId: 'static_seller_4',
-      farmerName: 'Baldev Singh',
+      farmerName: 'Anil Deshmukh',
       commodity: 'Rice',
       quantity: 200.0,
       unit: 'Quintal',
-      pricePerUnit: 4200.0,
+      pricePerUnit: 4100.0,
       quality: 'A+',
       location: 'Kolhapur, Maharashtra',
       description: 'Super fine long grain aromatic Basmati. Cleaned and packed in 50kg bags.',
@@ -181,7 +180,7 @@ List<MarketplaceListing> getStaticFallbackListings() {
   ];
 }
 
-/// Stream of all marketplace listings from Firestore with zero-latency caching & AI fallback
+/// Stream of all marketplace listings from Supabase with instant offline caching
 final marketplaceStreamProvider = StreamProvider<List<MarketplaceListing>>((ref) {
   final db = ref.watch(databaseServiceProvider);
   final controller = StreamController<List<MarketplaceListing>>();
@@ -201,43 +200,24 @@ final marketplaceStreamProvider = StreamProvider<List<MarketplaceListing>>((ref)
 
   loadInitialData();
 
-  final subscription = db.getMarketListings().listen(
-    (jsonList) async {
-      final List<MarketplaceListing> validListings = [];
-      for (final json in jsonList) {
-        try {
-          validListings.add(MarketplaceListing.fromJson(json));
-        } catch (e) {
-          debugPrint('Error parsing marketplace listing: $e');
-        }
+  final subscription = db.getMarketListingsStream().listen(
+    (remoteListings) async {
+      if (remoteListings.isNotEmpty) {
+        await saveCachedMarketplace(remoteListings);
       }
-      
-      // Save downloaded listings as cached listings
-      await saveCachedMarketplace(validListings);
-      
       final local = await getLocalListings();
-      final merged = _mergeListings(local, validListings);
+      final merged = _mergeListings(local, remoteListings.isNotEmpty ? remoteListings : getStaticFallbackListings());
       
       if (!controller.isClosed) {
         controller.add(merged);
       }
     },
     onError: (err) async {
-      debugPrint('Firestore Marketplace Stream Error: $err. Initiating AI/Offline recovery.');
+      debugPrint('Supabase Marketplace Stream Error: $err. Resuming from local cache.');
       final local = await getLocalListings();
       final cached = await getCachedMarketplace();
-      
-      // If offline or permission-denied, try to fetch simulated/live listings from Gemini AI
-      List<MarketplaceListing> aiList = [];
-      try {
-        final rawAi = await AIService().getAIMarketplaceListings();
-        aiList = rawAi.map((json) => MarketplaceListing.fromJson(json)).toList();
-      } catch (e) {
-        debugPrint('Gemini AI Marketplace generator failed: $e');
-      }
-      
-      final fallbackPool = aiList.isNotEmpty ? aiList : getStaticFallbackListings();
-      final merged = _mergeListings(local, [...cached, ...fallbackPool]);
+      final fallbackPool = cached.isNotEmpty ? cached : getStaticFallbackListings();
+      final merged = _mergeListings(local, fallbackPool);
       
       if (!controller.isClosed) {
         controller.add(merged);
@@ -256,7 +236,7 @@ final marketplaceStreamProvider = StreamProvider<List<MarketplaceListing>>((ref)
 /// Provider to get the current user's ID for ownership checks
 final currentUserIdProvider = Provider<String?>((ref) {
   final auth = ref.watch(authServiceProvider);
-  return auth.currentUser?.uid;
+  return auth.currentUser?.id;
 });
 
 /// Actions provider for adding/deleting listings
@@ -284,11 +264,11 @@ class MarketplaceActions {
       debugPrint('Error saving local listing action: $e');
     }
 
-    // 2. Upload to Firestore (ignore errors to keep local work functional)
+    // 2. Upload to Supabase
     try {
-      await _ref.read(databaseServiceProvider).addMarketListing(listing.toJson());
+      await _ref.read(databaseServiceProvider).addMarketListing(listing);
     } catch (e) {
-      debugPrint('Firestore upload ignored error: $e');
+      debugPrint('Supabase addMarketListing error: $e');
     }
   }
 
@@ -299,7 +279,6 @@ class MarketplaceActions {
       final updated = local.where((l) => l.id != listingId).toList();
       await saveLocalListings(updated);
       
-      // Also delete from cached firestore listings if it exists there
       final cached = await getCachedMarketplace();
       final updatedCached = cached.where((l) => l.id != listingId).toList();
       await saveCachedMarketplace(updatedCached);
@@ -307,11 +286,11 @@ class MarketplaceActions {
       debugPrint('Error deleting local listing action: $e');
     }
 
-    // 2. Delete from Firestore
+    // 2. Delete from Supabase
     try {
       await _ref.read(databaseServiceProvider).deleteMarketListing(listingId);
     } catch (e) {
-      debugPrint('Firestore delete ignored error: $e');
+      debugPrint('Supabase deleteMarketListing error: $e');
     }
   }
 
@@ -379,11 +358,11 @@ class MarketplaceActions {
       debugPrint('Error marking local listing sold action: $e');
     }
 
-    // 2. Mark sold in Firestore
+    // 2. Mark sold in Supabase
     try {
       await _ref.read(databaseServiceProvider).markListingSold(listingId);
     } catch (e) {
-      debugPrint('Firestore mark sold ignored error: $e');
+      debugPrint('Supabase markSold error: $e');
     }
   }
 }

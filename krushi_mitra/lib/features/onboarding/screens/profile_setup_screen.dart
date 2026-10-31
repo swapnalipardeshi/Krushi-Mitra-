@@ -77,11 +77,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           _selectedIrrigation = existingProfile.irrigationSource;
         });
       } else {
-        // 2. Fallback to Firebase Auth display name if new profile
+        // 2. Fallback to Supabase Auth display name if new profile
         final user = ref.read(authServiceProvider).currentUser;
-        if (user != null && user.displayName != null && _nameController.text.isEmpty) {
+        final fullName = user?.userMetadata?['full_name'] as String?;
+        if (fullName != null && fullName.isNotEmpty && _nameController.text.isEmpty) {
           setState(() {
-            _nameController.text = user.displayName!;
+            _nameController.text = fullName;
           });
         }
       }
@@ -99,34 +100,31 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   void _finishSetup() async {
     final user = ref.read(authServiceProvider).currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not authenticated')));
-      return;
-    }
+    final userId = user?.id ?? ref.read(currentUserProvider).value?.id ?? 'farmer_${DateTime.now().millisecondsSinceEpoch}';
 
     if (_nameController.text.isNotEmpty && _selectedState != null && _landSizeController.text.isNotEmpty) {
       setState(() => _isUploading = true);
       
       final existingProfile = ref.read(currentUserProvider).value;
-      String? photoUrl = existingProfile?.photoUrl ?? user.photoURL;
+      String? photoUrl = existingProfile?.photoUrl ?? user?.userMetadata?['avatar_url'] as String?;
 
       if (_imageFile != null) {
         try {
-          photoUrl = await _storage.uploadProfilePic(user.uid, _imageFile!);
+          photoUrl = await _storage.uploadProfilePic(userId, _imageFile!);
         } catch (e) {
           debugPrint("Failed to upload profile picture: $e");
         }
       }
 
       final farmer = Farmer(
-        id: user.uid,
+        id: userId,
         name: _nameController.text.trim(),
         photoUrl: photoUrl,
         state: _selectedState!,
         district: _districtController.text.isNotEmpty ? _districtController.text.trim() : 'Nashik',
         landSize: double.tryParse(_landSizeController.text) ?? 2.5,
         cropsGrown: _cropsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
-        preferredLanguage: 'en',
+        preferredLanguage: 'hi',
         soilType: _selectedSoilType,
         irrigationSource: _selectedIrrigation,
       );
@@ -163,7 +161,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 child: ListBody(
                   children: [
                     Text(
-                      'We couldn\'t save your profile to Firebase Firestore.',
+                      'We couldn\'t save your profile to Supabase database.',
                       style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 12),
@@ -193,8 +191,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     const SizedBox(height: 6),
                     Text(
                       '1. Ensure you have an active internet connection.\n'
-                      '2. Verify Firestore database is created in the Firebase Console.\n'
-                      '3. Check Firestore rules (allow read, write if auth != null).',
+                      '2. Verify public.farmers table exists in Supabase.\n'
+                      '3. Check Supabase RLS security policies.',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         color: AppColors.textSecondary,

@@ -1,30 +1,90 @@
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StorageService {
-  // Using the explicit bucket from google-services.json
-  final FirebaseStorage _storage = FirebaseStorage.instanceFor(bucket: 'krushi-mitra-dd431.firebasestorage.app');
+  static const String _bucket = 'krushi-uploads';
 
-  Future<String?> uploadProfilePic(String userId, File file) async {
+  SupabaseClient? get _supabase {
     try {
-      final ref = _storage.ref().child('profile_pics').child('$userId.jpg');
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Uploads a user profile picture to Supabase Storage and returns the public CDN URL.
+  Future<String?> uploadProfilePic(String userId, File file) async {
+    if (_supabase == null) return null;
+    try {
+      final path = 'profile_pics/$userId.jpg';
       final bytes = await file.readAsBytes();
-      final uploadTask = ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
-      final snapshot = await uploadTask;
-      return await snapshot.ref.getDownloadURL();
+
+      await _supabase!.storage.from(_bucket).uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/jpeg',
+          upsert: true,
+        ),
+      );
+
+      final publicUrl = _supabase!.storage.from(_bucket).getPublicUrl(path);
+      debugPrint("StorageService: Profile picture uploaded successfully -> $publicUrl");
+      return publicUrl;
     } catch (e) {
-      debugPrint("Storage Upload Error: $e");
-      // Fallback to legacy domain
-      try {
-        final legacyStorage = FirebaseStorage.instanceFor(bucket: 'krushi-mitra-dd431.appspot.com');
-        final ref = legacyStorage.ref().child('profile_pics').child('$userId.jpg');
-        final bytes = await file.readAsBytes();
-        await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
-        return await ref.getDownloadURL();
-      } catch (_) {
-        return null;
-      }
+      debugPrint("StorageService: Supabase Upload Error (Profile Pic): $e");
+      return null;
+    }
+  }
+
+  /// Uploads a marketplace produce image to Supabase Storage.
+  Future<String?> uploadMarketplaceImage(String listingId, File file) async {
+    if (_supabase == null) return null;
+    try {
+      final path = 'marketplace/$listingId.jpg';
+      final bytes = await file.readAsBytes();
+
+      await _supabase!.storage.from(_bucket).uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/jpeg',
+          upsert: true,
+        ),
+      );
+
+      final publicUrl = _supabase!.storage.from(_bucket).getPublicUrl(path);
+      debugPrint("StorageService: Marketplace image uploaded -> $publicUrl");
+      return publicUrl;
+    } catch (e) {
+      debugPrint("StorageService: Supabase Upload Error (Marketplace): $e");
+      return null;
+    }
+  }
+
+  /// Uploads an AI Doctor crop diagnosis picture.
+  Future<String?> uploadCropDiagnosisImage(File file) async {
+    if (_supabase == null) return null;
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final path = 'crop_diagnoses/crop_$timestamp.jpg';
+      final bytes = await file.readAsBytes();
+
+      await _supabase!.storage.from(_bucket).uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/jpeg',
+          upsert: true,
+        ),
+      );
+
+      final publicUrl = _supabase!.storage.from(_bucket).getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      debugPrint("StorageService: Diagnosis image upload notice: $e");
+      return null;
     }
   }
 }

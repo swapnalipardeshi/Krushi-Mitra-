@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:uuid/uuid.dart';
+import '../../../core/services/storage_service.dart';
 import 'dart:convert';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
@@ -98,45 +98,21 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   Future<String> _uploadImage(String id) async {
     if (_imageFile == null) return widget.existingListing?.imageUrl ?? '';
-    
-    // Attempt 1: Try real Firebase Storage
     try {
-      final String? bucket = Firebase.app().options.storageBucket;
-      final storage = bucket != null && bucket.isNotEmpty 
-          ? FirebaseStorage.instanceFor(bucket: bucket)
-          : FirebaseStorage.instance;
-          
-      final ref = storage.ref().child('marketplace').child('$id.jpg');
-      final bytes = await _imageFile!.readAsBytes();
-      final uploadTask = ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
-      final snapshot = await uploadTask;
-      
-      if (snapshot.state == TaskState.success) {
-        return await snapshot.ref.getDownloadURL();
-      }
+      final url = await StorageService().uploadMarketplaceImage(id, _imageFile!);
+      if (url != null && url.isNotEmpty) return url;
     } catch (e) {
-      debugPrint('Storage upload failed: $e');
+      debugPrint('Supabase Storage upload error: $e');
     }
-
-    // Attempt 2: Zero-Config Base64 Fallback (Stores image directly in database)
-    // This solves the "Storage not enabled" issue for the user automatically.
     try {
-      debugPrint('Using Zero-Config Base64 mode...');
       final bytes = await _imageFile!.readAsBytes();
-      
-      // Safety check for Firestore 1MB limit
-      if (bytes.length > 800000) { 
-        throw 'Photo too large for direct listing. Please take a smaller photo.';
+      if (bytes.length < 500000) {
+        final base64Str = base64Encode(bytes);
+        return 'data:image/jpeg;base64,' + base64Str;
       }
-      
-      final base64Str = base64Encode(bytes);
-      return 'data:image/jpeg;base64,$base64Str';
-    } catch (e) {
-      debugPrint('Base64 encoding failed: $e');
-      rethrow;
-    }
+    } catch (_) {}
+    return widget.existingListing?.imageUrl ?? '';
   }
-
   void _generateAIDescription() async {
     if (_commodityController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -199,7 +175,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     try {
       final user = ref.read(authServiceProvider).currentUser;
       final profile = ref.read(currentUserProvider).valueOrNull;
-      final id = widget.existingListing?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+      final id = widget.existingListing?.id ?? const Uuid().v4();
       
       String imageUrl = '';
       try {
@@ -221,8 +197,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
       final listing = MarketplaceListing(
         id: id,
-        sellerId: widget.existingListing?.sellerId ?? user?.uid ?? '',
-        farmerName: widget.existingListing?.farmerName ?? profile?.name ?? user?.displayName ?? 'Farmer',
+        sellerId: widget.existingListing?.sellerId ?? user?.id ?? '',
+        farmerName: widget.existingListing?.farmerName ?? profile?.name ?? user?.userMetadata?['name']?.toString() ?? 'Farmer',
         commodity: _commodityController.text.trim(),
         quantity: double.tryParse(_quantityController.text) ?? 0,
         unit: _unit,

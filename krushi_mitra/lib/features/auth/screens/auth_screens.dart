@@ -139,8 +139,15 @@ class AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateProvider);
     final profileState = ref.watch(currentUserProvider);
+
+    // 1. If an active profile is in memory (logged-in user or explicit guest session), open dashboard
+    if (profileState.hasValue && profileState.value != null) {
+      return const MainScreen();
+    }
+
+    // 2. Otherwise route based on Supabase Authentication session
+    final authState = ref.watch(authStateProvider);
 
     return authState.when(
       data: (user) {
@@ -151,13 +158,11 @@ class AuthGate extends ConsumerWidget {
             return const MainScreen();
           },
           loading: () => const SplashScreen(),
-          error: (e, st) => const MainScreen(),
+          error: (e, st) => const LoginScreen(),
         );
       },
       loading: () => const SplashScreen(),
-      error: (e, st) => Scaffold(
-        body: Center(child: Text('Auth Error: $e')),
-      ),
+      error: (e, st) => const LoginScreen(),
     );
   }
 }

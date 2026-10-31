@@ -1,10 +1,10 @@
 // ⚡ Krushi Mitra — Pre-Commit Conflict Check Engine (Flutter / Dart)
 // Round 2 Challenge Feature: Detects activity-weather and crop calendar-soil conflicts
-// BEFORE the user commits to an action, logs overrides to Firestore conflict_audit_logs,
+// BEFORE the user commits to an action, logs overrides to Supabase conflict_audit_logs,
 // and exposes a Judge Debug State Panel.
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'supabase_service.dart';
 
 class ConflictCheckResult {
   final bool hasConflict;
@@ -62,8 +62,6 @@ class ConflictCheckService {
   factory ConflictCheckService() => _instance;
   ConflictCheckService._internal();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   /// Check Farm Diary activity pre-commit against live weather
   ConflictCheckResult evaluateDiaryActivityConflict({
     required String activityType,
@@ -103,20 +101,20 @@ class ConflictCheckService {
     }
 
     // 2. High Wind Risk for Spraying
-    if (lowerAct.contains('spray') && windSpeed > 15.0) {
+    if (isSprayingOrFertilizer && windSpeed >= 20.0) {
       return ConflictCheckResult(
         hasConflict: true,
         isBlocking: false,
-        title: '🌬️ High Wind Drift Risk (${windSpeed.toStringAsFixed(1)} km/h)',
-        reason: 'Wind speed exceeds safe limits (15 km/h). Spraying now will cause chemical drift to adjacent fields.',
+        title: '💨 High Wind Warning (${windSpeed.toStringAsFixed(1)} km/h)',
+        reason: 'High wind speed will cause severe pesticide drift to neighboring fields and waste expensive chemicals.',
         rainProbability: rainProbability,
-        expectedTime: 'Current Forecast',
+        expectedTime: 'Immediate',
         activityType: activityType,
         rawInputs: rawInputs,
       );
     }
 
-    // 3. Harvest Rain Conflict
+    // 3. Rain Risk during Harvest
     if (isHarvesting && rainProbability >= 0.60) {
       final rainPct = (rainProbability * 100).toStringAsFixed(0);
       return ConflictCheckResult(
@@ -134,7 +132,7 @@ class ConflictCheckService {
     return ConflictCheckResult.noConflict(activityType);
   }
 
-  /// Log Farmer Override Decision to Firestore for Auditability
+  /// Log Farmer Override Decision to Supabase for Auditability
   Future<void> logConflictOverride({
     required ConflictCheckResult conflict,
     required String farmerName,
@@ -142,20 +140,21 @@ class ConflictCheckService {
     String? userReason,
   }) async {
     try {
-      await _firestore.collection('conflict_audit_logs').add({
-        'farmerName': farmerName,
-        'location': location,
-        'activityType': conflict.activityType,
-        'conflictTitle': conflict.title,
-        'conflictReason': conflict.reason,
-        'rainProbability': conflict.rainProbability,
-        'userReason': userReason ?? 'Farmer decided to proceed anyway',
-        'rawInputs': conflict.rawInputs,
-        'overrideTimestamp': FieldValue.serverTimestamp(),
-      });
-      debugPrint('Conflict Check: Override logged to Firestore conflict_audit_logs');
+      if (SupabaseService.isInitialized) {
+        await SupabaseService.client?.from('conflict_audit_logs').insert({
+          'farmer_name': farmerName,
+          'location': location,
+          'activity_type': conflict.activityType,
+          'conflict_title': conflict.title,
+          'conflict_reason': conflict.reason,
+          'rain_probability': conflict.rainProbability,
+          'user_reason': userReason ?? 'Farmer decided to proceed anyway',
+          'raw_inputs': conflict.rawInputs,
+        });
+        debugPrint('Conflict Check: Override logged to Supabase conflict_audit_logs');
+      }
     } catch (e) {
-      debugPrint('Conflict Check audit log error: $e');
+      debugPrint('Conflict Check audit log notice: $e');
     }
   }
 
