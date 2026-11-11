@@ -29,13 +29,15 @@ class AuthService {
     }
   }
 
-  // Stream of auth state changes (User? stream)
-  Stream<User?> get authStateChanges {
+  // Stream of auth state changes (User? stream) with immediate initial value
+  Stream<User?> get authStateChanges async* {
+    yield currentUser;
     try {
-      return _supabase.auth.onAuthStateChange.map((event) => event.session?.user);
+      await for (final event in _supabase.auth.onAuthStateChange) {
+        yield event.session?.user;
+      }
     } catch (e) {
       debugPrint("AuthService: authStateChanges stream error: $e");
-      return const Stream.empty();
     }
   }
 

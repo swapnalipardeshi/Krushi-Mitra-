@@ -79,6 +79,7 @@ flutter:
     - assets/images/
     - assets/lottie/
     - assets/icons/
+    - .env
 
 
   # No local fonts, using Google Fonts for Poppins

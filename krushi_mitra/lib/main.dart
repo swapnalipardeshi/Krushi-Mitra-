@@ -31,7 +31,7 @@ void main() async {
 
     // 2. Initialize Supabase as Primary Backend (Auth, Database, Storage)
     final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? 'https://jsqmqaqirtxvclsyjimd.supabase.co';
-    final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+    final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? 'sb_publishable_t8aZPVK2bcO52Bot7le7Dw_iGke7K-X';
     if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
       try {
         await Supabase.initialize(
@@ -41,7 +41,7 @@ void main() async {
             authFlowType: AuthFlowType.pkce,
             autoRefreshToken: true,
           ),
-        );
+        ).timeout(const Duration(seconds: 4));
         debugPrint("Supabase initialized as primary backend!");
       } catch (e) {
         debugPrint("Supabase initialization error: $e");
@@ -50,21 +50,45 @@ void main() async {
       debugPrint("WARNING: Supabase URL or Anon Key is missing from .env!");
     }
 
-    // 3. Initialize FCM Push Notifications (Fail-safe, non-blocking)
+    // 3. Immediately launch the Flutter UI so the OS splash screen dismisses
+    runApp(
+      const ProviderScope(
+        child: KrushiMitraApp(),
+      ),
+    );
+
+    // 4. Initialize Background Services Asynchronously (Non-blocking)
+    _initBackgroundServices();
+  }, (error, stack) {
+    debugPrint("CRITICAL ASYNC ROOT ERROR: $error");
+    if (kDebugMode) {
+      debugPrint(stack.toString());
+    }
+  });
+}
+
+/// Initializes non-critical background services without delaying UI startup.
+void _initBackgroundServices() {
+  // Push Notifications (Asynchronous, fail-safe)
+  Future.microtask(() async {
     try {
-      await NotificationService().initialize();
+      await NotificationService().initialize().timeout(const Duration(seconds: 4));
     } catch (e) {
       debugPrint("Notification init notice: $e");
     }
+  });
 
-    // 4. Initialize Local SharedPreferences
+  // Local SharedPreferences
+  Future.microtask(() async {
     try {
       await SharedPreferences.getInstance();
     } catch (e) {
       debugPrint("Prefs init error: $e");
     }
+  });
 
-    // 5. Initialize Core Services (Fail-safe)
+  // Core domain services
+  Future.microtask(() {
     try {
       final aiService = AIService();
       aiService.initialize();
@@ -73,17 +97,6 @@ void main() async {
       debugPrint("Krushi Mitra core domain services initialized.");
     } catch (e) {
       debugPrint("Service init warning: $e");
-    }
-
-    runApp(
-      const ProviderScope(
-        child: KrushiMitraApp(),
-      ),
-    );
-  }, (error, stack) {
-    debugPrint("CRITICAL ASYNC ROOT ERROR: $error");
-    if (kDebugMode) {
-      debugPrint(stack.toString());
     }
   });
 }
