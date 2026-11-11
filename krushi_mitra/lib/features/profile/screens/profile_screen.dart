@@ -49,6 +49,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     await ref.read(authServiceProvider).signOut();
+                    ref.read(currentUserProvider.notifier).signOut();
                     if (context.mounted) {
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const AuthGate()),

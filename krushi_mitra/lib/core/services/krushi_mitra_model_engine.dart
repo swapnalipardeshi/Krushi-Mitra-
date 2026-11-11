@@ -37,7 +37,7 @@ CUSTOM REASONING GUARDRAILS:
   }) {
     final apiKey = _gemini.currentApiKey;
     return GenerativeModel(
-      model: 'models/gemini-2.0-flash',
+      model: 'models/gemini-3.5-flash',
       apiKey: apiKey,
       systemInstruction: Content.system(customPrompt ?? customSystemInstruction),
       generationConfig: GenerationConfig(

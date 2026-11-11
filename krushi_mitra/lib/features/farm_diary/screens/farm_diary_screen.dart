@@ -140,9 +140,9 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
                         // Pre-Commit Conflict Check Engine
                         final conflict = ConflictCheckService().evaluateDiaryActivityConflict(
                           activityType: selectedActivity,
-                          rainProbability: weather != null ? weather.rainChance / 100.0 : 0.75, // Default test 75% for conflict demo
-                          windSpeed: weather?.windSpeed ?? 18.0,
-                          forecastCondition: weather?.condition ?? 'Rain',
+                          rainProbability: weather != null ? weather.rainChance / 100.0 : 0.0,
+                          windSpeed: weather?.windSpeed ?? 5.0,
+                          forecastCondition: weather?.condition ?? 'Clear',
                         );
 
                         if (conflict.hasConflict) {
@@ -151,7 +151,7 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
                             context: ctx,
                             builder: (dialogCtx) => AlertDialog(
                               backgroundColor: AppColors.surfaceObsidian,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.error, width: 1.5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.error, width: 1.5)),
                               title: Row(
                                 children: [
                                   const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 28),
@@ -163,7 +163,7 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(conflict.reason, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: Colors.white.withOpacity(0.9))),
+                                  Text(conflict.reason, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: Colors.white.withValues(alpha: 0.9))),
                                   const SizedBox(height: 14),
                                   Container(
                                     padding: const EdgeInsets.all(12),

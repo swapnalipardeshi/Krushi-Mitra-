@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../market_prices/screens/mandi_prices_screen.dart';
 
 class MarketPriceSlider extends StatelessWidget {
   const MarketPriceSlider({super.key});
@@ -31,7 +32,7 @@ class MarketPriceSlider extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MandiPricesScreen())),
                 child: Text(
                   'View All',
                   style: GoogleFonts.manrope(

@@ -108,7 +108,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       final bytes = await _imageFile!.readAsBytes();
       if (bytes.length < 500000) {
         final base64Str = base64Encode(bytes);
-        return 'data:image/jpeg;base64,' + base64Str;
+        return 'data:image/jpeg;base64,$base64Str';
       }
     } catch (_) {}
     return widget.existingListing?.imageUrl ?? '';
@@ -508,7 +508,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         TextFormField(
           controller: _minOrderController,
           keyboardType: TextInputType.number,
-          decoration: InputDecoration(labelText: 'Minimum Order Quantity', prefixIcon: const Icon(Icons.shopping_basket_rounded), hintText: 'Optional'),
+          decoration: const InputDecoration(labelText: 'Minimum Order Quantity', prefixIcon: Icon(Icons.shopping_basket_rounded), hintText: 'Optional'),
         ),
       ]),
     );

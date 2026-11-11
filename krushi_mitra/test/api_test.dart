@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -16,7 +17,14 @@ void main() {
   });
 
   test('Test all APIs', () async {
-    await dotenv.load(fileName: ".env");
+    final envFile = File('.env');
+    if (envFile.existsSync()) {
+      dotenv.testLoad(fileInput: envFile.readAsStringSync());
+    } else {
+      try {
+        await dotenv.load(fileName: ".env");
+      } catch (_) {}
+    }
 
     AIService().initialize();
     MarketService().initialize();
@@ -36,12 +44,12 @@ void main() {
 
     print("Testing Market API...");
     final markets = await MarketService().getMarketPrices(state: 'Maharashtra', commodity: 'Wheat');
-    print("Market items: \${markets.length}");
+    print("Market items: ${markets.length}");
     expect(markets, isNotNull);
 
     print("Testing Weather API...");
     final weather = await WeatherService().getWeatherByLocation(19.0760, 72.8777);
-    print("Weather Temp: \${weather.temperature}");
+    print("Weather Temp: ${weather.temperature}");
     expect(weather, isNotNull);
 
     print("Testing Gemini API...");
@@ -50,10 +58,10 @@ void main() {
         context,
         {'name': 'PM-KISAN', 'benefit': '6000', 'eligibility': 'Small farmers'},
       );
-      print("Gemini Response: \$aiResponse");
+      print("Gemini Response: $aiResponse");
       expect(aiResponse, isNotEmpty);
     } catch(e) {
-      print("Gemini Failed: \$e");
+      print("Gemini Failed: $e");
       fail("Gemini API failed");
     }
   });

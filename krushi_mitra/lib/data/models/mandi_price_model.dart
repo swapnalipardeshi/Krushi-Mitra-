@@ -21,27 +21,26 @@ class MandiPrice {
 
   factory MandiPrice.fromJson(Map<String, dynamic> json) {
     return MandiPrice(
-      id: json['id'] as String,
-      state: json['state'] as String,
-      district: json['district'] as String,
-      commodity: json['commodity'] as String,
-      minPrice: (json['minPrice'] as num).toDouble(),
-      maxPrice: (json['maxPrice'] as num).toDouble(),
-      modalPrice: (json['modalPrice'] as num).toDouble(),
-      date: DateTime.parse(json['date'] as String),
+      id: json['id']?.toString() ?? '',
+      state: json['state'] as String? ?? '',
+      district: json['district'] as String? ?? '',
+      commodity: json['commodity'] as String? ?? '',
+      minPrice: (json['min_price'] ?? json['minPrice'] as num?)?.toDouble() ?? 0.0,
+      maxPrice: (json['max_price'] ?? json['maxPrice'] as num?)?.toDouble() ?? 0.0,
+      modalPrice: (json['modal_price'] ?? json['modalPrice'] as num?)?.toDouble() ?? 0.0,
+      date: DateTime.tryParse(json['arrival_date']?.toString() ?? json['date']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'state': state,
       'district': district,
       'commodity': commodity,
-      'minPrice': minPrice,
-      'maxPrice': maxPrice,
-      'modalPrice': modalPrice,
-      'date': date.toIso8601String(),
+      'min_price': minPrice,
+      'max_price': maxPrice,
+      'modal_price': modalPrice,
+      'arrival_date': date.toIso8601String().split('T').first,
     };
   }
 }

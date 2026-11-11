@@ -23,13 +23,15 @@ class FarmDiaryEntry extends Equatable {
 
   factory FarmDiaryEntry.fromJson(Map<String, dynamic> json) {
     return FarmDiaryEntry(
-      id: json['id'] ?? '',
-      farmerId: json['farmerId'] ?? '',
-      date: (json['date'] as dynamic)?.toDate() ?? DateTime.now(),
+      id: json['id']?.toString() ?? '',
+      farmerId: json['farmer_id'] ?? json['farmerId'] ?? '',
+      date: json['date'] is String
+          ? DateTime.parse(json['date'])
+          : DateTime.now(),
       activity: json['activity'] ?? '',
       category: json['category'] ?? '',
       cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
-      isExpense: json['isExpense'] ?? true,
+      isExpense: json['is_expense'] ?? json['isExpense'] ?? true,
       notes: json['notes'],
     );
   }
@@ -37,11 +39,12 @@ class FarmDiaryEntry extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'farmerId': farmerId,
-      'date': date,
+      'farmer_id': farmerId,
+      'date': date.toIso8601String(),
       'activity': activity,
       'category': category,
       'cost': cost,
+      'is_expense': isExpense,
       'isExpense': isExpense,
       'notes': notes,
     };

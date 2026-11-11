@@ -33,6 +33,13 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   }
 
   @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
     

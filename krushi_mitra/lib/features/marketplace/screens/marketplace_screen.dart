@@ -263,8 +263,8 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                 ]),
                 const Spacer(),
                 if (isOwner) ...[
-                  IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(existingListing: listing))), icon: Icon(Icons.edit_note_rounded, color: AppColors.primaryEmerald), tooltip: 'Edit'),
-                  IconButton(onPressed: () => _confirmDelete(listing.id), icon: Icon(Icons.delete_outline_rounded, color: AppColors.error), tooltip: 'Delete'),
+                  IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(existingListing: listing))), icon: const Icon(Icons.edit_note_rounded, color: AppColors.primaryEmerald), tooltip: 'Edit'),
+                  IconButton(onPressed: () => _confirmDelete(listing.id), icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error), tooltip: 'Delete'),
                 ] else ...[
                   // Quick Contact Buttons
                   _quickAction(Icons.phone_in_talk_rounded, AppColors.primaryEmerald, () => launchUrl(Uri.parse('tel:${listing.phoneNumber}'))),
@@ -330,7 +330,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
             Text(listing.farmerName, style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
             Text('${listing.commodity} • ${listing.quantity} ${listing.unit}', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
           ])),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primaryEmerald, AppColors.neonCyan]), borderRadius: BorderRadius.circular(10)),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.primaryEmerald, AppColors.neonCyan]), borderRadius: BorderRadius.circular(10)),
             child: Text('₹${listing.pricePerUnit.toStringAsFixed(0)}', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white))),
         ]),
         const SizedBox(height: 20),
@@ -407,6 +407,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   );
 
   void _share(MarketplaceListing l) {
-    Share.share('🌾 ${l.commodity} — ₹${l.pricePerUnit.toStringAsFixed(0)}/${l.unit}\n📦 ${l.quantity} ${l.unit}\n📍 ${l.location}\n👨‍🌾 ${l.farmerName}\n\nFound on Krushi Mitra Pro 🚀');
+    SharePlus.instance.share(ShareParams(text: '🌾 ${l.commodity} — ₹${l.pricePerUnit.toStringAsFixed(0)}/${l.unit}\n📦 ${l.quantity} ${l.unit}\n📍 ${l.location}\n👨‍🌾 ${l.farmerName}\n\nFound on Krushi Mitra Pro 🚀'));
   }
 }

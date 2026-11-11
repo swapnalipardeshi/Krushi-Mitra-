@@ -15,8 +15,8 @@ class GeminiService {
   
   // Valid, actively supported Gemini models (2025-2026 stable)
   static const _modelFallbacks = [
-    'gemini-1.5-flash',
-    'gemini-2.0-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
   ];
   int _currentModelIndex = 0;
 
@@ -32,7 +32,7 @@ class GeminiService {
         _apiKeys.add(primaryKey.trim());
       }
 
-      for (int i = 1; i <= 5; i++) {
+      for (int i = 1; i <= 4; i++) {
         final key = dotenv.env['GEMINI_KEY_$i'];
         if (key != null && key.isNotEmpty && !key.contains('YOUR_') && key.length > 20 && !_apiKeys.contains(key.trim())) {
           _apiKeys.add(key.trim());
@@ -265,7 +265,7 @@ class GeminiService {
         'Content-Type': 'application/json',
       }),
       data: {
-        'model': 'llama-3.1-8b-instant',
+        'model': 'qwen/qwen3.8-27b',
         'messages': [
           if (systemPrompt != null) {'role': 'system', 'content': systemPrompt},
           {'role': 'user', 'content': prompt},

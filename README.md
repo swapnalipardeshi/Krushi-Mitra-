@@ -1,3 +1,4 @@
+
 # 🌾 Krushi Mitra (कृषी मित्र) — AI-Powered Smart Agriculture Platform
 
 **Krushi Mitra** is a production-grade, offline-resilient, AI-enabled mobile application engineered specifically for Indian farmers. It integrates real-time agricultural intelligence, localized crop disease diagnosis, direct farmer-to-farmer trade, APMC mandi market price discovery, and government scheme eligibility guidance.

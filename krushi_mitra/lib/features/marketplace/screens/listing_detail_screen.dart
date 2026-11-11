@@ -243,7 +243,7 @@ class ListingDetailScreen extends StatelessWidget {
                         style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
                     if (listing.isVerified) ...[
                       const SizedBox(width: 6),
-                      Icon(Icons.verified_rounded, size: 16, color: AppColors.primaryEmerald),
+                      const Icon(Icons.verified_rounded, size: 16, color: AppColors.primaryEmerald),
                     ],
                   ],
                 ),
@@ -523,6 +523,6 @@ ${listing.isNegotiable ? '💬 Price Negotiable' : ''}
 
 Found on *Krushi Mitra Pro* 🚀''';
 
-    Share.share(text);
+    SharePlus.instance.share(ShareParams(text: text));
   }
 }

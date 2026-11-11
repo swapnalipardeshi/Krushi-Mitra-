@@ -166,10 +166,15 @@ class _MandiPricesScreenState extends ConsumerState<MandiPricesScreen> {
         Expanded(
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'State', isDense: true),
-            initialValue: currentState,
-            items: [
+            initialValue: const [
               'Maharashtra', 'Uttar Pradesh', 'Punjab', 'Rajasthan', 'Gujarat', 
-              'Madhya Pradesh', 'Karnataka', 'Haryana'
+              'Madhya Pradesh', 'Karnataka', 'Haryana', 'Tamil Nadu', 'Andhra Pradesh',
+              'Telangana', 'West Bengal', 'Bihar', 'Kerala', 'Odisha'
+            ].contains(currentState) ? currentState : 'Maharashtra',
+            items: const [
+              'Maharashtra', 'Uttar Pradesh', 'Punjab', 'Rajasthan', 'Gujarat', 
+              'Madhya Pradesh', 'Karnataka', 'Haryana', 'Tamil Nadu', 'Andhra Pradesh',
+              'Telangana', 'West Bengal', 'Bihar', 'Kerala', 'Odisha'
             ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             onChanged: (val) {
                if (val != null) {

@@ -108,13 +108,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
             _passwordController.text,
             fullName: _nameController.text.trim(),
           );
+          // Check if session was created (email verification may be required)
+          final session = Supabase.instance.client.auth.currentSession;
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: const Text('Account created! Please check your email for verification link if enabled.'),
+              content: Text(session != null
+                  ? 'Account created successfully!'
+                  : 'Account created! Please check your email for verification link.'),
               backgroundColor: AppColors.primaryEmerald,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ));
+          }
+          if (session == null) {
+            // Don't navigate — user needs to verify email first
+            setState(() => _isLoading = false);
+            return;
           }
         }
         _navigateToHome();

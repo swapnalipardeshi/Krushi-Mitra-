@@ -21,6 +21,7 @@ class DatabaseService {
       await _supabase.saveFarmerProfile(farmer);
     } catch (e) {
       debugPrint("DatabaseService saveFarmerProfile error: $e");
+      rethrow;
     }
   }
 
@@ -40,6 +41,7 @@ class DatabaseService {
       await _supabase.createPost(post);
     } catch (e) {
       debugPrint("DatabaseService createPost error: $e");
+      rethrow;
     }
   }
 
@@ -57,6 +59,7 @@ class DatabaseService {
       await _supabase.likePost(postId);
     } catch (e) {
       debugPrint("DatabaseService likePost error: $e");
+      rethrow;
     }
   }
 
@@ -67,6 +70,7 @@ class DatabaseService {
       await _supabase.addDiaryEntry(entry);
     } catch (e) {
       debugPrint("DatabaseService addDiaryEntry error: $e");
+      rethrow;
     }
   }
 
@@ -84,6 +88,7 @@ class DatabaseService {
       await _supabase.deleteDiaryEntry(farmerId, entryId);
     } catch (e) {
       debugPrint("DatabaseService deleteDiaryEntry error: $e");
+      rethrow;
     }
   }
 
@@ -94,6 +99,7 @@ class DatabaseService {
       await _supabase.addMarketListing(listing);
     } catch (e) {
       debugPrint("DatabaseService addMarketListing error: $e");
+      rethrow;
     }
   }
 
@@ -120,6 +126,7 @@ class DatabaseService {
       await _supabase.deleteMarketListing(listingId);
     } catch (e) {
       debugPrint("DatabaseService deleteMarketListing error: $e");
+      rethrow;
     }
   }
 
@@ -128,6 +135,7 @@ class DatabaseService {
       await _supabase.markListingSold(listingId);
     } catch (e) {
       debugPrint("DatabaseService markListingSold error: $e");
+      rethrow;
     }
   }
 }

@@ -19,8 +19,8 @@ void main() {
       expect(find.byType(SplashScreen), findsOneWidget);
       expect(find.text('KRUSHI MITRA'), findsOneWidget);
       
-      // Wait for the splash screen timer to finish (usually 2-3 seconds)
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // Advance frames past the initial animation
+      await tester.pump(const Duration(milliseconds: 1500));
       
       // After splash, it should transition to Login or Dashboard depending on mock state
       // We just need to ensure no timers are pending.
@@ -38,16 +38,21 @@ void main() {
 
       // Verify Login Screen UI elements are present
       expect(find.text('WELCOME BACK'), findsOneWidget);
-      expect(find.text('Login'), findsWidgets);
+      expect(find.text('Sign In'), findsWidgets);
       
       // Verify Google Login Button exists
-      expect(find.text('Sign in with Google'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsOneWidget);
       
       // Verify switch to Sign Up mode works
-      await tester.tap(find.text('New here? Sign Up'));
+      final switchModeButton = find.byWidgetPredicate(
+        (widget) => widget is TextButton && widget.child is RichText,
+      );
+      expect(switchModeButton, findsOneWidget);
+      await tester.ensureVisible(switchModeButton);
+      await tester.tap(switchModeButton);
       await tester.pumpAndSettle();
-      expect(find.text('JOIN US'), findsOneWidget);
-      expect(find.text('Create Account'), findsOneWidget);
+      expect(find.text('JOIN KRUSHI MITRA'), findsOneWidget);
+      expect(find.text('Create Account'), findsWidgets);
     });
   });
 }

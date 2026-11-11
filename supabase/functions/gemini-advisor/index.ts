@@ -39,7 +39,7 @@ serve(async (req: Request) => {
       imageBase64,
       mimeType = "image/jpeg",
       action = "generate_text",
-      model = "gemini-1.5-flash",
+      model = "gemini-3.5-flash",
     } = body;
 
     if (!prompt && !imageBase64) {

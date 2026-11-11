@@ -53,11 +53,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   final List<String> _states = [
-    'Maharashtra', 'Gujarat', 'Punjab', 'Tamil Nadu', 'Karnataka', 'Andhra Pradesh', 'Uttar Pradesh'
+    'Maharashtra', 'Gujarat', 'Punjab', 'Tamil Nadu', 'Karnataka', 'Andhra Pradesh',
+    'Uttar Pradesh', 'Rajasthan', 'Madhya Pradesh', 'Haryana', 'Telangana', 'West Bengal', 'Bihar', 'Kerala', 'Odisha'
   ];
 
-  final List<String> _soilTypes = ['Black', 'Red', 'Alluvial', 'Sandy', 'Loamy', 'Laterite'];
-  final List<String> _irrigationSources = ['Well', 'Borewell', 'Canal', 'Rainfed', 'River'];
+  final List<String> _soilTypes = [
+    'Black', 'Red', 'Alluvial', 'Sandy', 'Loamy', 'Laterite', 'Black Soil (Regur)', 'Clayey Soil'
+  ];
+  final List<String> _irrigationSources = [
+    'Well', 'Borewell', 'Canal', 'Rainfed', 'River', 'Drip Irrigation', 'Sprinkler'
+  ];
 
   @override
   void initState() {
@@ -372,7 +377,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget _buildStateDropdown() {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: 'Select State', prefixIcon: const Icon(Icons.map_outlined), filled: true, fillColor: AppColors.surfaceWhite),
-      initialValue: _selectedState,
+      initialValue: _states.contains(_selectedState) ? _selectedState : null,
       items: _states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
       onChanged: (v) => setState(() => _selectedState = v),
     );
@@ -381,7 +386,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget _buildSoilDropdown() {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: 'Soil Type', prefixIcon: const Icon(Icons.terrain_rounded), filled: true, fillColor: AppColors.surfaceWhite),
-      initialValue: _selectedSoilType,
+      initialValue: _soilTypes.contains(_selectedSoilType) ? _selectedSoilType : null,
       items: _soilTypes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
       onChanged: (v) => setState(() => _selectedSoilType = v),
     );
@@ -390,7 +395,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget _buildIrrigationDropdown() {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: 'Irrigation Source', prefixIcon: const Icon(Icons.water_drop_rounded), filled: true, fillColor: AppColors.surfaceWhite),
-      initialValue: _selectedIrrigation,
+      initialValue: _irrigationSources.contains(_selectedIrrigation) ? _selectedIrrigation : null,
       items: _irrigationSources.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
       onChanged: (v) => setState(() => _selectedIrrigation = v),
     );

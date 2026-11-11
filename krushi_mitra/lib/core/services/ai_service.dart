@@ -238,17 +238,12 @@ Respond ONLY in valid JSON (no markdown, no backticks):
 
       debugPrint('AI Doctor: Processing image, size: ${processedBytes.length} bytes');
 
-      return await _gemini.runWithRetry((model) async {
-        final content = [
-          Content('user', [
-            DataPart('image/jpeg', Uint8List.fromList(processedBytes)),
-            TextPart(prompt),
-          ])
-        ];
-        final response = await model.generateContent(content);
-        final jsonStr = _extractJson(response.text ?? '');
-        return CropDiagnosis.fromJson(json.decode(jsonStr));
-      });
+      final text = await _gemini.generateMultimodal(
+        Uint8List.fromList(processedBytes),
+        prompt,
+      );
+      final jsonStr = _extractJson(text);
+      return CropDiagnosis.fromJson(json.decode(jsonStr));
     } catch (e) {
       debugPrint('AI Doctor Error: $e');
       final errorStr = e.toString();
@@ -358,10 +353,7 @@ $langInst
 Keep it practical and actionable. Use bullet points.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        return response.text ?? 'Could not check eligibility. Please try again.';
-      });
+      return await _gemini.generateText(prompt);
     } catch (e) {
       return '⚠️ Unable to check eligibility right now. Please ensure internet connectivity and try again.';
     }
@@ -388,10 +380,7 @@ $langInst
 Maximum 40 words. Be specific to THEIR crops and location, not generic.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        return response.text ?? '';
-      });
+      return await _gemini.generateText(prompt);
     } catch (e) {
       return '';
     }
@@ -418,10 +407,7 @@ $langInst
 Maximum 35 words. Be decisive — "Sell now" or "Hold for 2 weeks" — not vague.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        return response.text ?? 'Monitor prices closely.';
-      });
+      return await _gemini.generateText(prompt);
     } catch (e) {
       return '📊 Market data is loading. Check back shortly.';
     }
@@ -445,10 +431,7 @@ $langInst
 Maximum 35 words. Mention their crop by name. Be specific: "Don't spray today" or "Perfect day for sowing".''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        return response.text ?? 'Continue regular farming practices.';
-      });
+      return await _gemini.generateText(prompt);
     } catch (e) {
       final w = context.weather;
       final crops = context.profile?.cropsGrown ?? ["crops"];
@@ -484,11 +467,9 @@ TASK: Suggest an optimal direct-sale listing price. Consider:
 Return ONLY a number (the price in rupees per quintal). No text, no symbols.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final text = response.text?.replaceAll(RegExp(r'[^0-9.]'), '') ?? '';
-        return double.tryParse(text) ?? currentMandiRate;
-      });
+      final text = await _gemini.generateText(prompt);
+      final cleanText = text.replaceAll(RegExp(r'[^0-9.]'), '');
+      return double.tryParse(cleanText) ?? currentMandiRate;
     } catch (e) {
       return currentMandiRate;
     }
@@ -512,10 +493,7 @@ $langInst
 Keep it 30-40 words. Professional tone, not salesy. No emojis.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        return response.text ?? 'Premium quality farm-fresh produce. Direct from farmer. Bulk orders welcome.';
-      });
+      return await _gemini.generateText(prompt);
     } catch (e) {
       return 'Farm-fresh, quality-checked produce available for direct purchase. Competitive pricing for bulk buyers.';
     }
@@ -536,15 +514,12 @@ Scoring criteria:
 Return ONLY the grade letter (e.g., "A+" or "B"). Nothing else.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final text = response.text?.trim() ?? 'B';
-        // Clean to just the grade
-        if (text.contains('A+')) return 'A+';
-        if (text.contains('A')) return 'A';
-        if (text.contains('B')) return 'B';
-        return 'B';
-      });
+      final text = await _gemini.generateText(prompt);
+      final trimmed = text.trim();
+      if (trimmed.contains('A+')) return 'A+';
+      if (trimmed.contains('A')) return 'A';
+      if (trimmed.contains('B')) return 'B';
+      return 'B';
     } catch (e) {
       return 'B';
     }
@@ -572,10 +547,7 @@ $langInst
 Maximum 35 words. Be specific with numbers, not vague.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        return response.text ?? 'Keep tracking expenses for better insights.';
-      });
+      return await _gemini.generateText(prompt);
     } catch (e) {
       return '📒 Track your expenses regularly to optimize farm profitability.';
     }
@@ -592,12 +564,10 @@ Consider: land size limits, state eligibility, crop type requirements, income cr
 Return ONLY a number between 0 and 100. Nothing else.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final text = response.text?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0';
-        final score = int.tryParse(text) ?? 50;
-        return score.clamp(0, 100);
-      });
+      final text = await _gemini.generateText(prompt);
+      final clean = text.replaceAll(RegExp(r'[^0-9]'), '');
+      final score = int.tryParse(clean) ?? 50;
+      return score.clamp(0, 100);
     } catch (e) {
       return 50;
     }
@@ -624,10 +594,7 @@ $langInst
 Start with an emoji. Maximum 30 words. Ultra-specific, not generic.''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        return response.text ?? '🌾 Monitor your crops daily for healthy growth.';
-      });
+      return await _gemini.generateText(prompt);
     } catch (e) {
       return '🌾 Regular crop monitoring prevents major losses. Check your field today.';
     }
@@ -662,11 +629,9 @@ Respond in valid JSON only (no markdown):
 }''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final jsonStr = _extractJson(response.text ?? '');
-        return SoilRecommendation.fromJson(json.decode(jsonStr));
-      });
+      final text = await _gemini.generateText(prompt);
+      final jsonStr = _extractJson(text);
+      return SoilRecommendation.fromJson(json.decode(jsonStr));
     } catch (e) {
       throw Exception('Soil Analysis Error: $e');
     }
@@ -707,12 +672,10 @@ Respond ONLY with a valid JSON array of objects (no markdown, no backticks):
 ]''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final jsonStr = _extractJson(response.text ?? '[]');
-        final List list = json.decode(jsonStr);
-        return list.map((e) => MarketPrice.fromJson(e as Map<String, dynamic>)).toList();
-      });
+      final text = await _gemini.generateText(prompt);
+      final jsonStr = _extractJson(text);
+      final List list = json.decode(jsonStr);
+      return list.map((e) => MarketPrice.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
       debugPrint('AI Market Prices Error: $e');
       return [];
@@ -755,12 +718,10 @@ Respond ONLY with a valid JSON array of objects (no markdown, no backticks):
 ]''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final jsonStr = _extractJson(response.text ?? '[]');
-        final List list = json.decode(jsonStr);
-        return list.map((e) => Scheme.fromJson(e as Map<String, dynamic>)).toList();
-      });
+      final text = await _gemini.generateText(prompt);
+      final jsonStr = _extractJson(text);
+      final List list = json.decode(jsonStr);
+      return list.map((e) => Scheme.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
       debugPrint('AI Govt Schemes Error: $e');
       return [];
@@ -822,12 +783,10 @@ Respond ONLY with a valid JSON array of objects (no markdown, no backticks):
 ]''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final jsonStr = _extractJson(response.text ?? '[]');
-        final List list = json.decode(jsonStr);
-        return list.map((e) => e as Map<String, dynamic>).toList();
-      });
+      final text = await _gemini.generateText(prompt);
+      final jsonStr = _extractJson(text);
+      final List list = json.decode(jsonStr);
+      return list.map((e) => e as Map<String, dynamic>).toList();
     } catch (e) {
       debugPrint('AI Marketplace Listings Error: $e');
       return [];
@@ -871,16 +830,14 @@ Respond ONLY in valid JSON:
 }''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final jsonStr = _extractJson(response.text ?? '{}');
-        final map = json.decode(jsonStr);
-        return {
-          'is_flagged': map['is_flagged'] ?? false,
-          'category': map['category'] ?? category,
-          'reason': map['reason'] ?? '',
-        };
-      });
+      final responseText = await _gemini.generateText(prompt);
+      final jsonStr = _extractJson(responseText);
+      final map = json.decode(jsonStr);
+      return {
+        'is_flagged': map['is_flagged'] ?? false,
+        'category': map['category'] ?? category,
+        'reason': map['reason'] ?? '',
+      };
     } catch (e) {
       return {
         'is_flagged': false,
@@ -905,11 +862,9 @@ Respond ONLY in valid JSON:
 }''';
 
     try {
-      return await _gemini.runWithRetry((model) async {
-        final response = await model.generateContent([Content.text(prompt)]);
-        final jsonStr = _extractJson(response.text ?? '{}');
-        return json.decode(jsonStr);
-      });
+      final responseText = await _gemini.generateText(prompt);
+      final jsonStr = _extractJson(responseText);
+      return json.decode(jsonStr);
     } catch (e) {
       return {
         'trend': 'Bullish',

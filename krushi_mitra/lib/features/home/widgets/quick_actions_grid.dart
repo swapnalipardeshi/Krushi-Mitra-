@@ -8,6 +8,7 @@ import '../../govt_schemes/screens/schemes_list_screen.dart';
 import '../../soil_advisor/screens/soil_input_screen.dart';
 import '../../crop_calendar/screens/crop_calendar_screen.dart';
 import '../../farm_diary/screens/farm_diary_screen.dart';
+import '../../community/screens/community_screen.dart';
 
 class QuickActionGrid extends StatelessWidget {
   const QuickActionGrid({super.key});
@@ -61,6 +62,9 @@ class QuickActionGrid extends StatelessWidget {
                 break;
               case 'Crop Calendar':
                 destination = const CropCalendarScreen();
+                break;
+              case 'Community':
+                destination = const CommunityScreen();
                 break;
             }
             if (destination != null) {

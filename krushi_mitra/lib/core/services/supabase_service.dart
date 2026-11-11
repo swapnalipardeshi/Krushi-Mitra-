@@ -32,8 +32,8 @@ class SupabaseService {
       landSize: 2.5,
       cropsGrown: ['Wheat', 'Onion', 'Tomato', 'Soyabean'],
       preferredLanguage: 'hi',
-      soilType: 'Black Soil (Regur)',
-      irrigationSource: 'Drip Irrigation',
+      soilType: 'Black',
+      irrigationSource: 'Well',
     );
   }
 

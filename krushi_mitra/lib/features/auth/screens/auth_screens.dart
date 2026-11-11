@@ -31,15 +31,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   }
 
   void _checkAuth() {
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      final user = ref.read(authServiceProvider).currentUser;
-      if (user != null) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
-      } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-      }
-    });
+    // No auto-navigation — AuthGate handles routing.
+    // SplashScreen is only used as a loading placeholder.
   }
 
   @override
@@ -141,9 +134,13 @@ class AuthGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(currentUserProvider);
 
-    // 1. If an active profile is in memory (logged-in user or explicit guest session), open dashboard
+    // 1. If an active profile is in memory AND the user has a valid session or is a guest, open dashboard
     if (profileState.hasValue && profileState.value != null) {
-      return const MainScreen();
+      final currentUser = ref.read(authServiceProvider).currentUser;
+      final isGuest = profileState.value!.id == 'guest_user';
+      if (currentUser != null || isGuest) {
+        return const MainScreen();
+      }
     }
 
     // 2. Otherwise route based on Supabase Authentication session
