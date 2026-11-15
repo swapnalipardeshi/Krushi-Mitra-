@@ -6,6 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/locale_provider.dart';
+import '../../../core/services/firestore_service.dart';
+import '../../../data/models/farmer_model.dart';
 import '../../home/screens/main_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -22,9 +25,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
+  final _districtController = TextEditingController(text: 'Nashik');
+  final _landSizeController = TextEditingController(text: '2.5');
+
+  String _selectedState = 'Maharashtra';
+  final List<String> _selectedCrops = ['Wheat', 'Onion'];
+  String _selectedSoil = 'Black';
+  String _selectedIrrigation = 'Well';
+  String _selectedLanguage = 'hi';
 
   String _verificationId = '';
-  bool _isLogin = true;
+  // Default to false: When opened for the first time, show Account Creation with all details
+  bool _isLogin = false;
   bool _isPhoneLogin = false;
   bool _isOtpSent = false;
   bool _isLoading = false;
@@ -35,13 +47,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
+  final List<String> _states = const [
+    'Maharashtra', 'Uttar Pradesh', 'Punjab', 'Rajasthan', 'Gujarat',
+    'Madhya Pradesh', 'Karnataka', 'Haryana', 'Tamil Nadu', 'Andhra Pradesh',
+    'Telangana', 'West Bengal', 'Bihar', 'Kerala', 'Odisha',
+  ];
+
+  final List<String> _cropOptions = const [
+    'Wheat', 'Onion', 'Tomato', 'Cotton', 'Soyabean',
+    'Rice', 'Gram', 'Maize', 'Potato', 'Sugarcane', 'Bajra', 'Mustard',
+  ];
+
+  final List<String> _soilOptions = const [
+    'Black', 'Red', 'Alluvial', 'Sandy', 'Loamy', 'Clayey',
+  ];
+
+  final List<String> _irrigationOptions = const [
+    'Well', 'Borewell', 'Canal', 'Drip', 'Rainfed',
+  ];
+
+  final List<Map<String, String>> _langOptions = const [
+    {'code': 'hi', 'label': 'हिन्दी (Hindi)'},
+    {'code': 'mr', 'label': 'मराठी (Marathi)'},
+    {'code': 'en', 'label': 'English'},
+    {'code': 'gu', 'label': 'ગુજરાતી (Gujarati)'},
+    {'code': 'pa', 'label': 'ਪੰਜਾਬੀ (Punjabi)'},
+    {'code': 'bn', 'label': 'বাংলা (Bengali)'},
+    {'code': 'ta', 'label': 'தமிழ் (Tamil)'},
+    {'code': 'te', 'label': 'తెలుగు (Telugu)'},
+    {'code': 'kn', 'label': 'ಕನ್ನಡ (Kannada)'},
+  ];
+
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _selectedLanguage = ref.read(appLanguageProvider);
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
         .animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
     _fadeController.forward();
     _slideController.forward();
@@ -56,14 +100,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     _nameController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
+    _districtController.dispose();
+    _landSizeController.dispose();
     super.dispose();
   }
 
-  void _switchMode() {
+  void _switchMode(bool login) {
+    if (_isLogin == login) return;
     _slideController.reset();
     _slideController.forward();
     setState(() {
-      _isLogin = !_isLogin;
+      _isLogin = login;
+      _isPhoneLogin = false;
+      _isOtpSent = false;
       _formKey.currentState?.reset();
     });
   }
@@ -73,6 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     setState(() => _isLoading = true);
     try {
       final auth = ref.read(authServiceProvider);
+
       if (_isPhoneLogin) {
         if (!_isOtpSent) {
           final phone = _phoneController.text.trim();
@@ -117,33 +167,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
         } else {
           await auth.signInWithPhoneOtp(_verificationId, _otpController.text.trim());
           _navigateToHome();
+          return;
         }
-      } else {
-        if (_isLogin) {
-          await auth.signInWithEmail(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
-        } else {
-          final cred = await auth.signUpWithEmail(
-            _emailController.text.trim(),
-            _passwordController.text,
-            fullName: _nameController.text.trim(),
-          );
+      }
+
+      // Email & Password Flow
+      if (_isLogin) {
+        // Sign In
+        final cred = await auth.signInWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        if (cred.user != null) {
+          await ref.read(currentUserProvider.notifier).fetchProfile(cred.user!.uid);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: const Text('Account created successfully!'),
+              content: const Text('Signed in successfully!'),
               backgroundColor: AppColors.primaryEmerald,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ));
           }
-          if (cred.user == null) {
-            setState(() => _isLoading = false);
-            return;
-          }
+          _navigateToHome();
         }
-        _navigateToHome();
+      } else {
+        // Create Full Farmer Account
+        final cred = await auth.signUpWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+          fullName: _nameController.text.trim(),
+        );
+
+        if (cred.user != null) {
+          final uid = cred.user!.uid;
+          final farmer = Farmer(
+            id: uid,
+            name: _nameController.text.trim(),
+            state: _selectedState,
+            district: _districtController.text.trim().isEmpty ? 'Nashik' : _districtController.text.trim(),
+            landSize: double.tryParse(_landSizeController.text.trim()) ?? 2.5,
+            cropsGrown: _selectedCrops.isEmpty ? ['Wheat', 'Onion'] : _selectedCrops,
+            preferredLanguage: _selectedLanguage,
+            soilType: _selectedSoil,
+            irrigationSource: _selectedIrrigation,
+          );
+
+          // Save profile in Firestore and local offline storage
+          await FirestoreService().saveFarmerProfile(farmer);
+          await ref.read(currentUserProvider.notifier).fetchProfile(uid);
+          await ref.read(appLanguageProvider.notifier).setLanguage(_selectedLanguage, userId: uid);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: const Text('🎉 Welcome to Krushi Mitra! Account created successfully.'),
+              backgroundColor: AppColors.primaryEmerald,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ));
+          }
+          _navigateToHome();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -168,6 +251,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     try {
       final cred = await ref.read(authServiceProvider).signInWithGoogle();
       if (cred != null) {
+        if (cred.user != null) {
+          await ref.read(currentUserProvider.notifier).fetchProfile(cred.user!.uid);
+        }
         _navigateToHome();
       }
     } catch (e) {
@@ -207,7 +293,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Reset link sent to $email. Please check your inbox.'),
+            content: Text('Password reset link sent to $email. Please check your inbox.'),
             backgroundColor: AppColors.primaryEmerald,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -228,7 +314,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   }
 
   void _navigateToHome() {
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+      (route) => false,
+    );
   }
 
   String _friendlyError(String error) {
@@ -248,36 +337,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     if (lower.contains('network') || lower.contains('socketexception') || lower.contains('failed host lookup')) {
       return 'Network connection issue. Please check your internet connection.';
     }
-    return 'Authentication notice: ${error.replaceAll(RegExp(r'\[.*?\]'), '').trim()}';
+    return error.replaceAll('Exception:', '').replaceAll('firebase_auth/', '').trim();
   }
 
   int get _passwordStrength {
     final p = _passwordController.text;
-    if (p.isEmpty) return 0;
-    int score = 0;
-    if (p.length >= 6) score++;
-    if (p.length >= 8) score++;
-    if (RegExp(r'[A-Z]').hasMatch(p)) score++;
-    if (RegExp(r'[0-9]').hasMatch(p)) score++;
-    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(p)) score++;
-    return score;
+    int s = 0;
+    if (p.length >= 6) s++;
+    if (p.length >= 8) s++;
+    if (RegExp(r'[A-Z]').hasMatch(p)) s++;
+    if (RegExp(r'[0-9]').hasMatch(p)) s++;
+    if (RegExp(r'[!@#\$&*~]').hasMatch(p)) s++;
+    return s;
   }
 
   Color get _strengthColor {
-    final s = _passwordStrength;
-    if (s <= 1) return AppColors.error;
-    if (s <= 2) return AppColors.warning;
-    if (s <= 3) return AppColors.accentAmber;
-    return AppColors.success;
+    switch (_passwordStrength) {
+      case 0:
+      case 1:
+        return AppColors.error;
+      case 2:
+        return AppColors.warning;
+      case 3:
+        return Colors.orange;
+      case 4:
+      case 5:
+        return AppColors.primaryEmerald;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 
   String get _strengthLabel {
-    final s = _passwordStrength;
-    if (s == 0) return '';
-    if (s <= 1) return 'Weak';
-    if (s <= 2) return 'Fair';
-    if (s <= 3) return 'Good';
-    return 'Strong';
+    switch (_passwordStrength) {
+      case 0:
+      case 1:
+        return 'Weak';
+      case 2:
+        return 'Fair';
+      case 3:
+        return 'Good';
+      case 4:
+      case 5:
+        return 'Strong';
+      default:
+        return '';
+    }
   }
 
   @override
@@ -293,7 +398,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
@@ -303,20 +408,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Logo
                           _buildLogo(),
-                          const SizedBox(height: 32),
-                          // Title
+                          const SizedBox(height: 16),
                           _buildTitle(),
-                          const SizedBox(height: 8),
-                          Text(
-                            _isPhoneLogin
-                                ? (_isOtpSent ? 'Enter the 6-digit code sent to your phone' : 'We\'ll send you a verification code')
-                                : (_isLogin ? 'Welcome back to your farming companion' : 'Start your smart farming journey with Krushi Mitra'),
-                            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 36),
+                          const SizedBox(height: 16),
+                          // Dual Segmented Switcher: [ 📝 Create Account ] [ 🔑 Sign In ]
+                          _buildModeToggle(),
+                          const SizedBox(height: 20),
                           // Form fields
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
@@ -325,7 +423,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           const SizedBox(height: 24),
                           // Primary button
                           _buildPrimaryButton(),
-                          // Forgot password
+                          // Forgot password (only in Sign In mode)
                           if (!_isPhoneLogin && _isLogin) ...[
                             const SizedBox(height: 12),
                             TextButton(
@@ -334,28 +432,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                                   style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryEmerald)),
                             ),
                           ],
-                          const SizedBox(height: 8),
-                          // Toggle login/signup
-                          if (!_isPhoneLogin)
-                            TextButton(
-                              onPressed: _switchMode,
-                              child: RichText(
-                                text: TextSpan(
-                                  style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary),
-                                  children: [
-                                    TextSpan(text: _isLogin ? 'New here? ' : 'Already have an account? '),
-                                    TextSpan(
-                                      text: _isLogin ? 'Create Account' : 'Login',
-                                      style: const TextStyle(color: AppColors.primaryEmerald, fontWeight: FontWeight.w800),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
                           const SizedBox(height: 20),
-                          // Divider
                           _buildDivider(),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           // Guest Login Button
                           _buildGuestButton(),
                           const SizedBox(height: 12),
@@ -363,6 +442,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           _buildGoogleButton(),
                           const SizedBox(height: 12),
                           _buildPhoneToggleButton(),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -387,16 +467,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     return Hero(
       tag: 'app_logo',
       child: Container(
-        width: 88, height: 88,
+        width: 80, height: 80,
         decoration: BoxDecoration(
           gradient: AppTheme.celestialGradient,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.35), blurRadius: 30, offset: const Offset(0, 10))],
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 8))],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Image.asset('assets/icons/app_icon.png', width: 72, height: 72, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Icon(Icons.agriculture_rounded, size: 48, color: Colors.white)),
+          borderRadius: BorderRadius.circular(22),
+          child: Image.asset('assets/icons/app_icon.png', width: 64, height: 64, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.agriculture_rounded, size: 44, color: Colors.white)),
         ),
       ),
     );
@@ -406,47 +486,315 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     return Column(
       children: [
         Text(
-          _isLogin ? 'WELCOME BACK' : 'JOIN KRUSHI MITRA',
-          style: GoogleFonts.plusJakartaSans(color: AppColors.primaryEmerald, letterSpacing: 2.5, fontWeight: FontWeight.w800, fontSize: 11),
+          _isPhoneLogin
+              ? 'PHONE VERIFICATION'
+              : (_isLogin ? 'WELCOME BACK' : 'NEW FARMER REGISTRATION'),
+          style: GoogleFonts.plusJakartaSans(color: AppColors.primaryEmerald, letterSpacing: 2.0, fontWeight: FontWeight.w800, fontSize: 11),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
-          _isPhoneLogin ? (_isOtpSent ? 'Verify OTP' : 'Phone Login') : (_isLogin ? 'Sign In' : 'Create Account'),
-          style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+          _isPhoneLogin
+              ? (_isOtpSent ? 'Verify OTP' : 'Phone Login')
+              : (_isLogin ? 'Sign In to Your Account' : 'Create Farmer Account'),
+          style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _isLogin
+              ? 'Sign in to access your crops, diary and market rates'
+              : 'Fill in your farm details for personalized AI advice & alerts',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  Widget _buildModeToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _switchMode(false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: !_isLogin ? AppColors.primaryEmerald : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: !_isLogin
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Text(
+                    '📝 Create Account',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: !_isLogin ? Colors.white : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _switchMode(true),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: _isLogin ? AppColors.primaryEmerald : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: _isLogin
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Text(
+                    '🔑 Sign In',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: _isLogin ? Colors.white : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildFormFields() {
     if (_isPhoneLogin) {
       return Column(
-        key: const ValueKey('phone'),
+        key: const ValueKey('phone_auth'),
         children: [!_isOtpSent ? _buildPhoneField() : _buildOtpField()],
       );
     }
-    return Column(
-      key: ValueKey(_isLogin ? 'login' : 'signup'),
-      children: [
-        if (!_isLogin) ...[
-          _buildField(_nameController, 'Full Name', Icons.person_outline_rounded,
-              validator: (v) => v == null || v.trim().isEmpty ? 'Enter your name' : null),
-          const SizedBox(height: 14),
-        ],
-        _buildField(_emailController, 'Email Address', Icons.email_outlined,
+
+    if (_isLogin) {
+      // Clean Sign In Form
+      return Column(
+        key: const ValueKey('login_form'),
+        children: [
+          _buildField(
+            _emailController,
+            'Email Address',
+            Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
             validator: (v) {
               if (v == null || v.isEmpty) return 'Enter your email';
               if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) return 'Enter a valid email';
               return null;
-            }),
-        const SizedBox(height: 14),
+            },
+          ),
+          const SizedBox(height: 14),
+          _buildPasswordField(),
+        ],
+      );
+    }
+
+    // Full Detailed Account Creation Form
+    return Column(
+      key: const ValueKey('signup_form'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('👤 Farmer Information'),
+        const SizedBox(height: 10),
+        _buildField(
+          _nameController,
+          'Full Name (पूर्ण नाव / पूरा नाम)',
+          Icons.person_outline_rounded,
+          validator: (v) => v == null || v.trim().isEmpty ? 'Enter your full name' : null,
+        ),
+        const SizedBox(height: 12),
+        _buildField(
+          _emailController,
+          'Email Address',
+          Icons.email_outlined,
+          keyboardType: TextInputType.emailAddress,
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Enter your email';
+            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) return 'Enter a valid email';
+            return null;
+          },
+        ),
+        const SizedBox(height: 12),
         _buildPasswordField(),
-        if (!_isLogin && _passwordController.text.isNotEmpty) ...[
+        if (_passwordController.text.isNotEmpty) ...[
           const SizedBox(height: 8),
           _buildPasswordStrengthBar(),
         ],
+        const SizedBox(height: 18),
+        _buildSectionHeader('📍 Farm Location & Size'),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                initialValue: _selectedState,
+                decoration: const InputDecoration(
+                  labelText: 'State (राज्य)',
+                  prefixIcon: Icon(Icons.map_rounded, size: 20),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                items: _states.map((s) => DropdownMenuItem(value: s, child: Text(s, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedState = val);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildField(
+                _districtController,
+                'District (जिल्हा)',
+                Icons.location_city_rounded,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Enter district' : null,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildField(
+          _landSizeController,
+          'Land Size (जमीन एकर / Land in Acres)',
+          Icons.landscape_rounded,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Enter land size';
+            if (double.tryParse(v) == null) return 'Enter valid number';
+            return null;
+          },
+        ),
+        const SizedBox(height: 18),
+        _buildSectionHeader('🌾 Crops Grown (पिके / फसलें)'),
+        const SizedBox(height: 8),
+        Text('Tap to select crops you grow:', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _cropOptions.map((crop) {
+            final isSelected = _selectedCrops.contains(crop);
+            return FilterChip(
+              label: Text(crop),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedCrops.add(crop);
+                  } else {
+                    _selectedCrops.remove(crop);
+                  }
+                });
+              },
+              selectedColor: AppColors.primaryEmerald.withValues(alpha: 0.2),
+              checkmarkColor: AppColors.primaryEmerald,
+              labelStyle: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                color: isSelected ? AppColors.primaryEmerald : AppColors.textPrimary,
+              ),
+              backgroundColor: AppColors.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: isSelected ? AppColors.primaryEmerald : AppColors.outlineVariant.withValues(alpha: 0.3)),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 18),
+        _buildSectionHeader('🌱 Soil & Irrigation'),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                initialValue: _selectedSoil,
+                decoration: const InputDecoration(
+                  labelText: 'Soil Type (माती)',
+                  prefixIcon: Icon(Icons.grass_rounded, size: 20),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                items: _soilOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedSoil = val);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                initialValue: _selectedIrrigation,
+                decoration: const InputDecoration(
+                  labelText: 'Irrigation (पाणी)',
+                  prefixIcon: Icon(Icons.water_drop_rounded, size: 20),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                items: _irrigationOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedIrrigation = val);
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedLanguage,
+          decoration: const InputDecoration(
+            labelText: 'Preferred App Language (भाषा निवडा)',
+            prefixIcon: Icon(Icons.language_rounded, size: 20),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          ),
+          items: _langOptions.map((l) => DropdownMenuItem(value: l['code'], child: Text(l['label']!, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _selectedLanguage = val);
+              ref.read(appLanguageProvider.notifier).setLanguage(val);
+            }
+          },
+        ),
       ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+        color: AppColors.primaryEmerald,
+        letterSpacing: 0.5,
+      ),
     );
   }
 
@@ -457,7 +805,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon, size: 20)),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
       validator: validator ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
     );
   }
@@ -470,6 +822,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       decoration: InputDecoration(
         labelText: 'Password',
         prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         suffixIcon: IconButton(
           icon: Icon(_passwordVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 20),
           onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
@@ -507,7 +860,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     return TextFormField(
       controller: _phoneController,
       keyboardType: TextInputType.phone,
-      decoration: const InputDecoration(labelText: 'Phone Number', hintText: '10 digit number', prefixIcon: Icon(Icons.phone_android_rounded, size: 20), prefixText: '+91 '),
+      decoration: const InputDecoration(
+        labelText: 'Phone Number',
+        hintText: '10 digit number',
+        prefixIcon: Icon(Icons.phone_android_rounded, size: 20),
+        prefixText: '+91 ',
+      ),
       validator: (v) => (v == null || v.isEmpty || v.length < 10) ? 'Enter valid 10-digit number' : null,
     );
   }
@@ -531,6 +889,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   }
 
   Widget _buildPrimaryButton() {
+    final buttonText = _isPhoneLogin
+        ? (_isOtpSent ? 'Verify OTP & Enter' : 'Send Verification OTP')
+        : (_isLogin ? '🔑 Sign In (लॉगिन करा)' : '🌱 Create Account & Enter (खाते तयार करा)');
+
     return GestureDetector(
       onTap: _isLoading ? null : _handleAuth,
       child: AnimatedContainer(
@@ -541,13 +903,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
           gradient: _isLoading ? null : AppTheme.celestialGradient,
           color: _isLoading ? AppColors.textSecondary : null,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: _isLoading ? [] : [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
+          boxShadow: _isLoading ? [] : [BoxShadow(color: AppColors.primaryEmerald.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 8))],
         ),
         child: Center(
           child: _isLoading
               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
               : Text(
-                  _isPhoneLogin ? (_isOtpSent ? 'Verify & Login' : 'Send OTP') : (_isLogin ? 'Sign In' : 'Create Account'),
+                  buttonText,
                   style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                 ),
         ),
@@ -572,7 +934,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     return _socialButton(
       onTap: _handleGuestLogin,
       icon: const Icon(Icons.nature_people_rounded, color: AppColors.primaryEmerald, size: 22),
-      label: 'Explore as Guest',
+      label: 'Explore as Guest (अतिथी म्हणून सुरू करा)',
     );
   }
 
@@ -593,13 +955,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       return _socialButton(
         onTap: () => setState(() { _isPhoneLogin = true; _isOtpSent = false; _slideController.reset(); _slideController.forward(); }),
         icon: const Icon(Icons.phone_android_rounded, color: AppColors.primaryEmerald, size: 22),
-        label: 'Continue with Phone',
+        label: 'Continue with Phone Number',
       );
     }
     return _socialButton(
       onTap: () => setState(() { _isPhoneLogin = false; _isOtpSent = false; _slideController.reset(); _slideController.forward(); }),
       icon: const Icon(Icons.email_outlined, color: AppColors.primaryEmerald, size: 22),
-      label: 'Continue with Email',
+      label: 'Back to Email & Details Form',
     );
   }
 
@@ -607,10 +969,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     return GestureDetector(
       onTap: _isLoading ? null : onTap,
       child: Container(
-        height: 54,
+        height: 52,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.outline.withValues(alpha: 0.4)),
         ),
         child: Center(
@@ -619,7 +981,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
             children: [
               icon,
               const SizedBox(width: 12),
-              Text(label, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+              Text(label, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
             ],
           ),
         ),

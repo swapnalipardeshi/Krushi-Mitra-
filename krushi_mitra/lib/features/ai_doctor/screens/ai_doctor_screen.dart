@@ -57,6 +57,8 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
                   const _SmartWeatherAlert(),
                   const SizedBox(height: 24),
                   _buildCameraHero(aiState),
+                  const SizedBox(height: 16),
+                  _buildQuickSamples(),
                   const SizedBox(height: 24),
                   if (aiState.diagnosis != null) ...[
                     _buildDiagnosisResult(aiState.diagnosis!),
@@ -211,6 +213,87 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildQuickSamples() {
+    final samples = [
+      {'crop': 'Wheat', 'disease': 'Yellow Rust (पीला रतुआ)', 'icon': '🌾'},
+      {'crop': 'Tomato', 'disease': 'Early Blight (अगेती झुलसा)', 'icon': '🍅'},
+      {'crop': 'Onion', 'disease': 'Purple Blotch (बैंगनी धब्बा)', 'icon': '🧅'},
+      {'crop': 'Cotton', 'disease': 'Boll Rot (बोंड सड)', 'icon': '🌱'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Quick Test Samples (त्वरित चाचणी)',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Text(
+              '1-Tap Diagnose',
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryEmerald,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 44,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: samples.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final s = samples[index];
+              return InkWell(
+                onTap: () => ref.read(aiDoctorProvider.notifier).diagnoseSample(s['crop']!, s['disease']!),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceWhite,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.25)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Text(s['icon']!, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${s['crop']}: ${s['disease']}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

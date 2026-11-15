@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,28 +48,31 @@ void main() {
             authServiceProvider.overrideWithValue(MockAuthService()),
           ],
           child: const MaterialApp(
+            localizationsDelegates: [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: [Locale('en'), Locale('hi')],
             home: LoginScreen(),
           ),
         ),
       );
 
-      // Verify Login Screen UI elements are present
-      expect(find.text('WELCOME BACK'), findsOneWidget);
-      expect(find.text('Sign In'), findsWidgets);
+      // Verify Login Screen UI elements are present (Defaults to New Farmer Registration)
+      expect(find.text('NEW FARMER REGISTRATION'), findsOneWidget);
+      expect(find.text('Create Farmer Account'), findsWidgets);
 
       // Verify Google Login Button exists
       expect(find.text('Continue with Google'), findsOneWidget);
 
-      // Verify switch to Sign Up mode works
-      final switchModeButton = find.byWidgetPredicate(
-        (widget) => widget is TextButton && widget.child is RichText,
-      );
-      expect(switchModeButton, findsOneWidget);
-      await tester.ensureVisible(switchModeButton);
-      await tester.tap(switchModeButton);
+      // Verify switch to Sign In mode works
+      final signInToggle = find.text('🔑 Sign In');
+      expect(signInToggle, findsOneWidget);
+      await tester.tap(signInToggle);
       await tester.pumpAndSettle();
-      expect(find.text('JOIN KRUSHI MITRA'), findsOneWidget);
-      expect(find.text('Create Account'), findsWidgets);
+      expect(find.text('WELCOME BACK'), findsOneWidget);
+      expect(find.text('Sign In to Your Account'), findsOneWidget);
     });
   });
 }

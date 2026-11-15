@@ -7,6 +7,8 @@ import '../../ai_doctor/screens/ai_doctor_screen.dart';
 import '../../weather/screens/weather_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/locale_provider.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
 
@@ -63,6 +65,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _buildMainScaffold(dynamic profile) {
+    final lang = ref.watch(appLanguageProvider);
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -85,12 +88,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
-            _buildNavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, 'Home'),
-            _buildNavDestination(Icons.psychology_outlined, Icons.psychology_rounded, 'AI Doctor'),
-            _buildNavDestination(Icons.wb_sunny_outlined, Icons.wb_sunny_rounded, 'Weather'),
-            _buildNavDestination(Icons.storefront_outlined, Icons.storefront_rounded, 'Marketplace'),
-            _buildNavDestination(Icons.gavel_outlined, Icons.gavel_rounded, 'Schemes'),
-            _buildNavDestination(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+            _buildNavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, AppStrings.tr('home', lang)),
+            _buildNavDestination(Icons.psychology_outlined, Icons.psychology_rounded, AppStrings.tr('aiDoctor', lang)),
+            _buildNavDestination(Icons.wb_sunny_outlined, Icons.wb_sunny_rounded, AppStrings.tr('weather', lang)),
+            _buildNavDestination(Icons.storefront_outlined, Icons.storefront_rounded, AppStrings.tr('marketplace', lang)),
+            _buildNavDestination(Icons.gavel_outlined, Icons.gavel_rounded, AppStrings.tr('schemes', lang)),
+            _buildNavDestination(Icons.person_outline_rounded, Icons.person_rounded, AppStrings.tr('profile', lang)),
           ],
         ),
       ),

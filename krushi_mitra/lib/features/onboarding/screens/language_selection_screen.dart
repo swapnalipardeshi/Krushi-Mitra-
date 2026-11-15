@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/locale_provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import 'profile_setup_screen.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
@@ -14,7 +15,13 @@ class LanguageSelectionScreen extends ConsumerStatefulWidget {
 }
 
 class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScreen> {
-  String _selectedLanguage = 'hi';
+  late String _selectedLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLanguage = ref.read(appLanguageProvider);
+  }
 
   final List<Map<String, String>> _languages = [
     {'code': 'hi', 'name': 'हिन्दी', 'nativeName': 'Hindi'},
@@ -30,15 +37,27 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
 
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.canPop(context);
     return Scaffold(
       backgroundColor: AppColors.backgroundCloud,
+      appBar: canPop
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text('Select Language (भाषा)', style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+            )
+          : null,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              if (!canPop) const SizedBox(height: 30),
               Center(
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -171,14 +190,24 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
                     ],
                   ),
                   child: ElevatedButton(
-                    onPressed: () {
-                      ref.read(appLanguageProvider.notifier).setLanguage(_selectedLanguage);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ProfileSetupScreen(),
-                        ),
-                      );
+                    onPressed: () async {
+                      final currentProfile = ref.read(currentUserProvider).valueOrNull;
+                      await ref.read(appLanguageProvider.notifier).setLanguage(_selectedLanguage, userId: currentProfile?.id);
+                      if (currentProfile != null) {
+                        final updated = currentProfile.copyWith(preferredLanguage: _selectedLanguage);
+                        await ref.read(profileActionProvider.notifier).saveProfile(updated);
+                      }
+                      if (!context.mounted) return;
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileSetupScreen(),
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,

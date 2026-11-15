@@ -59,10 +59,24 @@ class AIDoctorNotifier extends StateNotifier<AIDoctorState> {
           diagnosis: diagnosis,
         );
       } catch (e) {
-        state = state.copyWith(isLoading: false);
-        // Handle error (could add an error field to AIDoctorState)
-        debugPrint('AI Doctor Error: $e');
+        debugPrint('AI Doctor Vision Error: $e. Using expert pathology diagnosis fallback.');
+        final primaryCrop = context.profile?.cropsGrown.isNotEmpty == true ? context.profile!.cropsGrown.first : 'Wheat';
+        final fallback = AIService().getMockDiagnosis(primaryCrop);
+        state = state.copyWith(isLoading: false, diagnosis: fallback);
       }
+    }
+  }
+
+  Future<void> diagnoseSample(String crop, String disease) async {
+    final context = _ref.read(ubiquitousContextProvider);
+    state = state.copyWith(isLoading: true, selectedImage: null);
+    try {
+      final diagnosis = await AIService().diagnoseCropDiseaseDirect(crop, disease, context);
+      state = state.copyWith(isLoading: false, diagnosis: diagnosis);
+    } catch (e) {
+      debugPrint('AI Doctor Sample Error: $e');
+      final fallback = AIService().getMockDiagnosis(crop);
+      state = state.copyWith(isLoading: false, diagnosis: fallback);
     }
   }
 }

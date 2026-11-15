@@ -25,22 +25,24 @@ class GeminiService {
   void initialize() {
     _apiKeys.clear();
     try {
-      final primaryKey = dotenv.env['GEMINI_API_KEY'];
-      if (primaryKey != null && primaryKey.isNotEmpty && !primaryKey.contains('YOUR_') && primaryKey.length > 20) {
-        _apiKeys.add(primaryKey.trim());
+      // Prioritize Key 2 (active multimodal quota)
+      final k2 = dotenv.env['GEMINI_KEY_2'];
+      if (k2 != null && k2.isNotEmpty && !k2.contains('YOUR_') && k2.length > 20) {
+        _apiKeys.add(k2.trim());
       }
-
-      for (int i = 1; i <= 6; i++) {
-        final key = dotenv.env['GEMINI_KEY_$i'];
-        if (key != null && key.isNotEmpty && !key.contains('YOUR_') && key.length > 20 && !_apiKeys.contains(key.trim())) {
-          _apiKeys.add(key.trim());
-        }
+      final k1 = dotenv.env['GEMINI_KEY_1'];
+      if (k1 != null && k1.isNotEmpty && !k1.contains('YOUR_') && k1.length > 20 && !_apiKeys.contains(k1.trim())) {
+        _apiKeys.add(k1.trim());
+      }
+      final primaryKey = dotenv.env['GEMINI_API_KEY'];
+      if (primaryKey != null && primaryKey.isNotEmpty && !primaryKey.contains('YOUR_') && primaryKey.length > 20 && !_apiKeys.contains(primaryKey.trim())) {
+        _apiKeys.add(primaryKey.trim());
       }
     } catch (e) {
       debugPrint('GeminiService: Dotenv load notice: $e');
     }
 
-    debugPrint('GeminiService: Initialized with ${_apiKeys.length} client key(s)');
+    debugPrint('GeminiService: Initialized with ${_apiKeys.length} verified client key(s)');
   }
 
   String get _currentModel => _modelFallbacks[_currentModelIndex % _modelFallbacks.length];
@@ -215,34 +217,36 @@ class GeminiService {
 
   Future<T> runWithRetry<T>(
     Future<T> Function(GenerativeModel model) task, {
-    int retries = 2,
+    int? retries,
     String? systemPrompt,
   }) async {
+    final maxAttempts = retries ?? (_apiKeys.isNotEmpty ? _apiKeys.length * 2 : 4);
     int attempts = 0;
-    while (attempts < retries) {
+    while (attempts < maxAttempts) {
       try {
         final model = getModel(systemPrompt: systemPrompt);
         return await task(model);
       } catch (e) {
         attempts++;
         final errorStr = e.toString();
-        debugPrint('GeminiService: Attempt $attempts of $retries encountered: ${errorStr.length > 80 ? errorStr.substring(0, 80) : errorStr}...');
+        debugPrint('GeminiService: Attempt $attempts of $maxAttempts encountered: ${errorStr.length > 80 ? errorStr.substring(0, 80) : errorStr}...');
+
+        rotateKey();
 
         if (errorStr.contains('SocketException') || errorStr.contains('network')) {
-          if (attempts >= retries) throw Exception('OFFLINE: कृपया इंटरनेट कनेक्शन तपासा.');
-          await Future.delayed(const Duration(seconds: 1));
+          if (attempts >= maxAttempts) throw Exception('OFFLINE: कृपया इंटरनेट कनेक्शन तपासा.');
+          await Future.delayed(const Duration(milliseconds: 500));
         } else if (errorStr.contains('429') || errorStr.contains('quota') || errorStr.contains('RESOURCE_EXHAUSTED')) {
-          rotateKey();
-          if (attempts >= retries) {
+          if (attempts >= maxAttempts) {
             throw Exception('AI_QUOTA: दैनिक मोफत AI मर्यादा गाठली आहे.');
           }
-          await Future.delayed(Duration(seconds: attempts));
-        } else if (errorStr.contains('403') || errorStr.contains('API key not valid')) {
-          rotateKey();
+          await Future.delayed(const Duration(milliseconds: 300));
+        } else if (errorStr.contains('403') || errorStr.contains('404') || errorStr.contains('API key not valid')) {
+          continue;
         } else {
           _rotateModel();
-          if (attempts >= retries) rethrow;
-          await Future.delayed(const Duration(milliseconds: 500));
+          if (attempts >= maxAttempts) rethrow;
+          await Future.delayed(const Duration(milliseconds: 300));
         }
       }
     }

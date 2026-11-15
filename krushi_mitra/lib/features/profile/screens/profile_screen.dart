@@ -7,6 +7,7 @@ import '../../auth/screens/auth_screens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../../../data/models/farmer_model.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../onboarding/screens/language_selection_screen.dart';
@@ -240,6 +241,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildSettingsSection(dynamic profile) {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final activeLang = ref.watch(appLanguageProvider);
+    final langNames = {
+      'hi': 'हिन्दी (Hindi)',
+      'mr': 'मराठी (Marathi)',
+      'bn': 'বাংলা (Bengali)',
+      'gu': 'ગુજરાતી (Gujarati)',
+      'pa': 'ਪੰਜਾਬੀ (Punjabi)',
+      'ta': 'தமிழ் (Tamil)',
+      'te': 'తెలుగు (Telugu)',
+      'kn': 'ಕನ್ನಡ (Kannada)',
+      'en': 'English',
+    };
+    final displayLang = langNames[activeLang] ?? activeLang.toUpperCase();
 
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -251,7 +265,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 16),
-          _buildSettingsTile(Icons.language_rounded, 'Language (भाषा)', profile?.preferredLanguage?.toUpperCase() ?? 'English', () {
+          _buildSettingsTile(Icons.language_rounded, 'Language (भाषा)', displayLang, () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionScreen()));
           }),
           _buildSwitchTile(

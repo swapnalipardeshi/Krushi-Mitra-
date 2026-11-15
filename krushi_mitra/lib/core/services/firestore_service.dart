@@ -41,12 +41,31 @@ class FirestoreService {
   // =========================================================================
 
   Future<Farmer?> getFarmerProfile(String uid) async {
+    // 1. Try local cache first for instant loading
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localStr = prefs.getString('local_farmer_profile_$uid');
+      if (localStr != null && localStr.isNotEmpty) {
+        final data = json.decode(localStr);
+        if (data is Map<String, dynamic>) {
+          data['id'] = uid;
+          return Farmer.fromJson(data);
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fetch from Firestore
     try {
       final doc = await _db.collection('farmers').doc(uid).get();
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
         data['id'] = doc.id;
-        return Farmer.fromJson(data);
+        final profile = Farmer.fromJson(data);
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('local_farmer_profile_$uid', json.encode(profile.toJson()));
+        } catch (_) {}
+        return profile;
       }
       return getLocalFallbackProfile(uid);
     } catch (e) {
@@ -56,6 +75,13 @@ class FirestoreService {
   }
 
   Future<void> saveFarmerProfile(Farmer farmer) async {
+    // 1. Save locally first for zero-latency UI updates
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('local_farmer_profile_${farmer.id}', json.encode(farmer.toJson()));
+    } catch (_) {}
+
+    // 2. Persist to Firestore
     try {
       await _db.collection('farmers').doc(farmer.id).set({
         'name': farmer.name,
