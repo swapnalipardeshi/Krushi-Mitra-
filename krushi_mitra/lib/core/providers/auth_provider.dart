@@ -54,6 +54,11 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<Farmer?>> {
     });
   }
 
+  void setProfile(Farmer farmer) {
+    debugPrint("Profile Set: Explicitly updated active profile for '${farmer.name}'");
+    state = AsyncValue.data(farmer);
+  }
+
   Future<void> fetchProfile(String uid) async {
     // Prevent duplicate concurrent profile fetches
     if (_isFetching) return;
@@ -61,11 +66,13 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<Farmer?>> {
 
     try {
       final profile = await _ref.read(databaseServiceProvider).getFarmerProfile(uid);
-      debugPrint("Profile Fetch: Loaded profile for '${profile?.name ?? 'New User'}'");
-      state = AsyncValue.data(profile);
-    } catch (e, st) {
-      debugPrint("Profile Fetch Notice: $e");
-      state = AsyncValue.error(e, st);
+      final resolved = profile ?? _ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
+      debugPrint("Profile Fetch: Loaded profile for '${resolved.name}'");
+      state = AsyncValue.data(resolved);
+    } catch (e) {
+      debugPrint("Profile Fetch Notice: $e - using resilient fallback profile");
+      final fallback = _ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
+      state = AsyncValue.data(fallback);
     } finally {
       _isFetching = false;
     }

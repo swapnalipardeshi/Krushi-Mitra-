@@ -59,20 +59,20 @@ void main() {
         ),
       );
 
-      // Verify Login Screen UI elements are present (Defaults to New Farmer Registration)
-      expect(find.text('NEW FARMER REGISTRATION'), findsOneWidget);
-      expect(find.text('Create Farmer Account'), findsWidgets);
+      // Verify Login Screen UI elements are present (Defaults to Sign In with Create Account option)
+      expect(find.text('WELCOME BACK'), findsOneWidget);
+      expect(find.text('Sign In to Your Account'), findsOneWidget);
+      expect(find.text('Create Farmer Account (नवीन खाते तयार करा)'), findsOneWidget);
 
       // Verify Google Login Button exists
       expect(find.text('Continue with Google'), findsOneWidget);
 
-      // Verify switch to Sign In mode works
-      final signInToggle = find.text('🔑 Sign In');
-      expect(signInToggle, findsOneWidget);
-      await tester.tap(signInToggle);
+      // Verify switch to Create Account mode works
+      final createAccountToggle = find.text('📝 Create Account');
+      expect(createAccountToggle, findsOneWidget);
+      await tester.tap(createAccountToggle);
       await tester.pumpAndSettle();
-      expect(find.text('WELCOME BACK'), findsOneWidget);
-      expect(find.text('Sign In to Your Account'), findsOneWidget);
+      expect(find.text('NEW FARMER REGISTRATION'), findsOneWidget);
     });
   });
 }

@@ -8,7 +8,6 @@ import '../../weather/screens/weather_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
-import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
 
@@ -66,6 +65,19 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   Widget _buildMainScaffold(dynamic profile) {
     final lang = ref.watch(appLanguageProvider);
+    final Map<String, List<String>> tabLabels = {
+      'hi': ['होम', 'डॉक्टर', 'मौसम', 'बाजार', 'योजनाएं', 'प्रोफाइल'],
+      'mr': ['मुख्य', 'डॉक्टर', 'हवामान', 'बाजार', 'योजना', 'प्रोफाइल'],
+      'en': ['Home', 'Doctor', 'Weather', 'Market', 'Schemes', 'Profile'],
+      'gu': ['હોમ', 'ડૉક્ટર', 'હવામાન', 'બજાર', 'યોજના', 'પ્રોફાઇલ'],
+      'pa': ['ਹੋਮ', 'ਡਾਕਟਰ', 'ਮੌਸਮ', 'ਮੰਡੀ', 'ਯੋਜਨਾਵਾਂ', 'ਪ੍ਰੋਫਾਈਲ'],
+      'bn': ['হোম', 'ডাক্তার', 'আবহাওয়া', 'বাজার', 'যোজনা', 'প্রোফাইল'],
+      'ta': ['முகப்பு', 'மருத்துவர்', 'வானிலை', 'சந்தை', 'திட்டங்கள்', 'சுயவிவரம்'],
+      'te': ['హోమ్', 'డాక్టర్', 'వాతావరణం', 'మార్కెట్', 'పథకాలు', 'ప్రొఫైల్'],
+      'kn': ['ಮುಖಪುಟ', 'ವೈದ್ಯ', 'ಹವಾಮಾನ', 'ಮಾರುಕಟ್ಟೆ', 'ಯೋಜನೆಗಳು', 'ಪ್ರೊಫೈಲ್'],
+    };
+    final labels = tabLabels[lang] ?? tabLabels['en']!;
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -76,7 +88,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           border: Border(top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3))),
         ),
         child: NavigationBar(
-          height: 75,
+          height: 72,
           backgroundColor: AppColors.background,
           elevation: 0,
           indicatorColor: AppColors.primaryEmerald.withValues(alpha: 0.15),
@@ -88,12 +100,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
-            _buildNavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, AppStrings.tr('home', lang)),
-            _buildNavDestination(Icons.psychology_outlined, Icons.psychology_rounded, AppStrings.tr('aiDoctor', lang)),
-            _buildNavDestination(Icons.wb_sunny_outlined, Icons.wb_sunny_rounded, AppStrings.tr('weather', lang)),
-            _buildNavDestination(Icons.storefront_outlined, Icons.storefront_rounded, AppStrings.tr('marketplace', lang)),
-            _buildNavDestination(Icons.gavel_outlined, Icons.gavel_rounded, AppStrings.tr('schemes', lang)),
-            _buildNavDestination(Icons.person_outline_rounded, Icons.person_rounded, AppStrings.tr('profile', lang)),
+            _buildNavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, labels[0]),
+            _buildNavDestination(Icons.psychology_outlined, Icons.psychology_rounded, labels[1]),
+            _buildNavDestination(Icons.wb_sunny_outlined, Icons.wb_sunny_rounded, labels[2]),
+            _buildNavDestination(Icons.storefront_outlined, Icons.storefront_rounded, labels[3]),
+            _buildNavDestination(Icons.gavel_outlined, Icons.gavel_rounded, labels[4]),
+            _buildNavDestination(Icons.person_outline_rounded, Icons.person_rounded, labels[5]),
           ],
         ),
       ),

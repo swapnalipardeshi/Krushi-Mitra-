@@ -6,7 +6,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../home/screens/main_screen.dart';
-import '../../onboarding/screens/profile_setup_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -149,14 +148,7 @@ class AuthGate extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user == null) return const LoginScreen();
-        return profileState.when(
-          data: (profile) {
-            if (profile == null) return const ProfileSetupScreen();
-            return const MainScreen();
-          },
-          loading: () => const SplashScreen(),
-          error: (e, st) => const LoginScreen(),
-        );
+        return const MainScreen();
       },
       loading: () => const SplashScreen(),
       error: (e, st) => const LoginScreen(),

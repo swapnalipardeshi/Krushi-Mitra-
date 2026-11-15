@@ -10,7 +10,8 @@ import '../../../core/providers/locale_provider.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 
 class ChatbotScreen extends ConsumerStatefulWidget {
-  const ChatbotScreen({super.key});
+  final String? initialMessage;
+  const ChatbotScreen({super.key, this.initialMessage});
 
   @override
   ConsumerState<ChatbotScreen> createState() => _ChatbotScreenState();
@@ -19,6 +20,16 @@ class ChatbotScreen extends ConsumerStatefulWidget {
 class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialMessage != null && widget.initialMessage!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(chatProvider.notifier).sendMessage(widget.initialMessage!.trim());
+      });
+    }
+  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {

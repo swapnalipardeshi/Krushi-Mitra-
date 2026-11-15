@@ -144,13 +144,15 @@ class _HomeContent extends ConsumerWidget {
       loading: () => const SizedBox(height: 150),
       error: (_, __) => const SizedBox(height: 150),
       data: (profile) {
-        final userName = profile?.name.split(' ').first ?? 'Farmer';
-        final location = weatherAsync.maybeWhen(
-          data: (w) => w.cityName,
-          orElse: () => profile != null
-              ? '${profile.district}, ${profile.state}'
-              : 'Location...',
-        );
+        final userName = (profile != null && profile.name.trim().isNotEmpty)
+            ? profile.name.trim().split(' ').first
+            : 'Farmer';
+        final location = (profile != null && profile.district.trim().isNotEmpty)
+            ? '${profile.district.trim()}, ${profile.state.trim()}'
+            : weatherAsync.maybeWhen(
+                data: (w) => w.cityName,
+                orElse: () => 'India',
+              );
 
         return Container(
           padding: const EdgeInsets.fromLTRB(20, 60, 20, 32),

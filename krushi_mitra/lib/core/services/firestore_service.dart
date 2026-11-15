@@ -44,7 +44,10 @@ class FirestoreService {
     // 1. Try local cache first for instant loading
     try {
       final prefs = await SharedPreferences.getInstance();
-      final localStr = prefs.getString('local_farmer_profile_$uid');
+      String? localStr = prefs.getString('local_farmer_profile_$uid');
+      if (localStr == null || localStr.isEmpty) {
+        localStr = prefs.getString('active_farmer_profile');
+      }
       if (localStr != null && localStr.isNotEmpty) {
         final data = json.decode(localStr);
         if (data is Map<String, dynamic>) {
@@ -63,7 +66,9 @@ class FirestoreService {
         final profile = Farmer.fromJson(data);
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('local_farmer_profile_$uid', json.encode(profile.toJson()));
+          final encoded = json.encode(profile.toJson());
+          await prefs.setString('local_farmer_profile_$uid', encoded);
+          await prefs.setString('active_farmer_profile', encoded);
         } catch (_) {}
         return profile;
       }
@@ -78,7 +83,9 @@ class FirestoreService {
     // 1. Save locally first for zero-latency UI updates
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('local_farmer_profile_${farmer.id}', json.encode(farmer.toJson()));
+      final jsonStr = json.encode(farmer.toJson());
+      await prefs.setString('local_farmer_profile_${farmer.id}', jsonStr);
+      await prefs.setString('active_farmer_profile', jsonStr);
     } catch (_) {}
 
     // 2. Persist to Firestore

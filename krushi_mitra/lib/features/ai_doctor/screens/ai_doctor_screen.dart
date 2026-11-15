@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/ai_doctor_provider.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../core/providers/smart_context_provider.dart';
+import '../../chatbot/screens/chatbot_screen.dart';
 
 class AIDoctorScreen extends ConsumerStatefulWidget {
   const AIDoctorScreen({super.key});
@@ -65,7 +66,7 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
                     const SizedBox(height: 24),
                     _buildTreatmentTabs(aiState.diagnosis!),
                     const SizedBox(height: 24),
-                    _buildActionButtons(),
+                    _buildActionButtons(aiState.diagnosis!),
                   ] else if (aiState.isLoading) ...[
                     _buildLoadingResult(),
                   ],
@@ -368,6 +369,11 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
                         ],
                       ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryEmerald),
+                      tooltip: 'Test Another Crop',
+                      onPressed: () => ref.read(aiDoctorProvider.notifier).reset(),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -570,26 +576,42 @@ class _AIDoctorScreenState extends ConsumerState<AIDoctorScreen> with SingleTick
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(CropDiagnosis diagnosis) {
     return Column(
       children: [
+        // 1. Test Another Crop (Top requested feature)
         ElevatedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.share_rounded, size: 20),
-          label: Text('Share Full Report', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+          onPressed: () {
+            ref.read(aiDoctorProvider.notifier).reset();
+          },
+          icon: const Icon(Icons.refresh_rounded, size: 22),
+          label: Text(
+            '🔄 Test Another Crop (दुसरे पीक तपासा)',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 56),
             backgroundColor: AppColors.primaryEmerald,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            elevation: 0,
+            elevation: 2,
           ),
         ),
         const SizedBox(height: 12),
+        // 2. Ask AI Question (Opens Chatbot with pre-filled question)
         OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            final query = 'I have a question about ${diagnosis.diseaseName} in my ${diagnosis.cropName} crop. What pesticide or fertilizer should I spray and what precautions should I take?';
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ChatbotScreen(initialMessage: query)),
+            );
+          },
           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
-          label: Text('Ask AI More Questions', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+          label: Text(
+            '💬 Ask AI Doctor Questions (शंका विचारा)',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 14),
+          ),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 56),
             foregroundColor: AppColors.primaryEmerald,

@@ -36,6 +36,10 @@ class AIDoctorNotifier extends StateNotifier<AIDoctorState> {
   final Ref _ref;
   AIDoctorNotifier(this._ref) : super(AIDoctorState());
 
+  void reset() {
+    state = AIDoctorState();
+  }
+
   Future<void> pickImage(ImageSource source) async {
     final context = _ref.read(ubiquitousContextProvider);
     final picker = ImagePicker();

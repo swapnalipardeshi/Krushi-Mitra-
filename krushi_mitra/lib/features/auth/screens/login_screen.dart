@@ -35,8 +35,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   String _selectedLanguage = 'hi';
 
   String _verificationId = '';
-  // Default to false: When opened for the first time, show Account Creation with all details
-  bool _isLogin = false;
+  // Default to true: Show clean Sign In with prominent option to create account
+  bool _isLogin = true;
   bool _isPhoneLogin = false;
   bool _isOtpSent = false;
   bool _isLoading = false;
@@ -174,9 +174,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       // Email & Password Flow
       if (_isLogin) {
         // Sign In
+        final cleanEmail = _emailController.text.trim().toLowerCase();
+        final cleanPassword = _passwordController.text.trim();
         final cred = await auth.signInWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
+          cleanEmail,
+          cleanPassword,
         );
         if (cred.user != null) {
           await ref.read(currentUserProvider.notifier).fetchProfile(cred.user!.uid);
@@ -192,34 +194,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
         }
       } else {
         // Create Full Farmer Account
+        final cleanEmail = _emailController.text.trim().toLowerCase();
+        final cleanPassword = _passwordController.text.trim();
+        final cleanName = _nameController.text.trim().isEmpty ? 'Farmer' : _nameController.text.trim();
+        final cleanDistrict = _districtController.text.trim().isEmpty ? 'Nashik' : _districtController.text.trim();
+        final cleanLand = double.tryParse(_landSizeController.text.trim()) ?? 2.5;
+
         final cred = await auth.signUpWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-          fullName: _nameController.text.trim(),
+          cleanEmail,
+          cleanPassword,
+          fullName: cleanName,
         );
 
         if (cred.user != null) {
           final uid = cred.user!.uid;
           final farmer = Farmer(
             id: uid,
-            name: _nameController.text.trim(),
+            name: cleanName,
             state: _selectedState,
-            district: _districtController.text.trim().isEmpty ? 'Nashik' : _districtController.text.trim(),
-            landSize: double.tryParse(_landSizeController.text.trim()) ?? 2.5,
+            district: cleanDistrict,
+            landSize: cleanLand,
             cropsGrown: _selectedCrops.isEmpty ? ['Wheat', 'Onion'] : _selectedCrops,
             preferredLanguage: _selectedLanguage,
             soilType: _selectedSoil,
             irrigationSource: _selectedIrrigation,
           );
 
-          // Save profile in Firestore and local offline storage
+          // 1. Instantly set in Riverpod state so UI reflects it immediately
+          ref.read(currentUserProvider.notifier).setProfile(farmer);
+
+          // 2. Persist profile locally and to Firestore
           await FirestoreService().saveFarmerProfile(farmer);
-          await ref.read(currentUserProvider.notifier).fetchProfile(uid);
           await ref.read(appLanguageProvider.notifier).setLanguage(_selectedLanguage, userId: uid);
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: const Text('🎉 Welcome to Krushi Mitra! Account created successfully.'),
+              content: Text('🎉 Welcome ${farmer.name}! Account created successfully.'),
               backgroundColor: AppColors.primaryEmerald,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -423,7 +433,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           const SizedBox(height: 24),
                           // Primary button
                           _buildPrimaryButton(),
-                          // Forgot password (only in Sign In mode)
+                          // Forgot password & Create Account Prompt (only in Sign In mode)
                           if (!_isPhoneLogin && _isLogin) ...[
                             const SizedBox(height: 12),
                             TextButton(
@@ -431,6 +441,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                               child: Text('Forgot Password?',
                                   style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryEmerald)),
                             ),
+                            const SizedBox(height: 16),
+                            _buildCreateAccountPrompt(),
                           ],
                           const SizedBox(height: 20),
                           _buildDivider(),
@@ -511,6 +523,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     );
   }
 
+  Widget _buildCreateAccountPrompt() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryEmerald.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🌱', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'New to Krushi Mitra? (नवीन शेतकरी?)',
+                  style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Create your farmer profile to get customized AI crop advice, live mandi alerts, and accurate weather updates.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _switchMode(false),
+              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+              label: Text(
+                'Create Farmer Account (नवीन खाते तयार करा)',
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryEmerald,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildModeToggle() {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -521,38 +585,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       ),
       child: Row(
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _switchMode(false),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: !_isLogin ? AppColors.primaryEmerald : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: !_isLogin
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primaryEmerald.withValues(alpha: 0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Center(
-                  child: Text(
-                    '📝 Create Account',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: !_isLogin ? Colors.white : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
           Expanded(
             child: GestureDetector(
               onTap: () => _switchMode(true),
@@ -579,6 +611,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: _isLogin ? Colors.white : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _switchMode(false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: !_isLogin ? AppColors.primaryEmerald : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: !_isLogin
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Text(
+                    '📝 Create Account',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: !_isLogin ? Colors.white : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -625,6 +689,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       key: const ValueKey('signup_form'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Easy navigation back to sign in
+        OutlinedButton.icon(
+          onPressed: () => _switchMode(true),
+          icon: const Icon(Icons.arrow_back_rounded, size: 18),
+          label: Text('← Back to Sign In (साइन इन कडे परत जा)', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primaryEmerald,
+            side: BorderSide(color: AppColors.primaryEmerald.withValues(alpha: 0.4)),
+            minimumSize: const Size(double.infinity, 42),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 16),
         _buildSectionHeader('👤 Farmer Information'),
         const SizedBox(height: 10),
         _buildField(
