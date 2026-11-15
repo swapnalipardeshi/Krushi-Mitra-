@@ -4,21 +4,21 @@ import '../../data/models/farmer_model.dart';
 import '../../data/models/post_model.dart';
 import '../../data/models/farm_diary_model.dart';
 import '../../features/marketplace/models/listing_model.dart';
-import 'supabase_service.dart';
+import 'firestore_service.dart';
 
 class DatabaseService {
-  final SupabaseService _supabase = SupabaseService();
+  final FirestoreService _firestore = FirestoreService();
 
   // Local fallback profile so app functions 100% offline
   Farmer getLocalFallbackProfile([String? uid]) {
-    return _supabase.getLocalFallbackProfile(uid);
+    return _firestore.getLocalFallbackProfile(uid);
   }
 
   // --- Farmer Profile ---
 
   Future<void> saveFarmerProfile(Farmer farmer) async {
     try {
-      await _supabase.saveFarmerProfile(farmer);
+      await _firestore.saveFarmerProfile(farmer);
     } catch (e) {
       debugPrint("DatabaseService saveFarmerProfile error: $e");
       rethrow;
@@ -27,7 +27,7 @@ class DatabaseService {
 
   Future<Farmer?> getFarmerProfile(String uid) async {
     try {
-      return await _supabase.getFarmerProfile(uid);
+      return await _firestore.getFarmerProfile(uid);
     } catch (e) {
       debugPrint("DatabaseService getFarmerProfile error: $e");
       return getLocalFallbackProfile(uid);
@@ -38,7 +38,7 @@ class DatabaseService {
 
   Future<void> createPost(Post post) async {
     try {
-      await _supabase.createPost(post);
+      await _firestore.createPost(post);
     } catch (e) {
       debugPrint("DatabaseService createPost error: $e");
       rethrow;
@@ -47,16 +47,16 @@ class DatabaseService {
 
   Stream<List<Post>> getPosts() {
     try {
-      return _supabase.getPostsStream();
+      return _firestore.getPostsStream();
     } catch (e) {
       debugPrint("DatabaseService getPosts stream error: $e");
-      return Stream.fromFuture(_supabase.getPosts());
+      return Stream.fromFuture(_firestore.getPosts());
     }
   }
 
   Future<void> likePost(String postId) async {
     try {
-      await _supabase.likePost(postId);
+      await _firestore.likePost(postId);
     } catch (e) {
       debugPrint("DatabaseService likePost error: $e");
       rethrow;
@@ -67,7 +67,7 @@ class DatabaseService {
 
   Future<void> addDiaryEntry(FarmDiaryEntry entry) async {
     try {
-      await _supabase.addDiaryEntry(entry);
+      await _firestore.addDiaryEntry(entry);
     } catch (e) {
       debugPrint("DatabaseService addDiaryEntry error: $e");
       rethrow;
@@ -76,16 +76,16 @@ class DatabaseService {
 
   Stream<List<FarmDiaryEntry>> getDiaryEntries(String farmerId) {
     try {
-      return _supabase.getDiaryEntriesStream(farmerId);
+      return _firestore.getDiaryEntriesStream(farmerId);
     } catch (e) {
       debugPrint("DatabaseService getDiaryEntries stream error: $e");
-      return Stream.fromFuture(_supabase.getDiaryEntries(farmerId));
+      return Stream.fromFuture(_firestore.getDiaryEntries(farmerId));
     }
   }
 
   Future<void> deleteDiaryEntry(String farmerId, String entryId) async {
     try {
-      await _supabase.deleteDiaryEntry(farmerId, entryId);
+      await _firestore.deleteDiaryEntry(farmerId, entryId);
     } catch (e) {
       debugPrint("DatabaseService deleteDiaryEntry error: $e");
       rethrow;
@@ -96,7 +96,7 @@ class DatabaseService {
 
   Future<void> addMarketListing(MarketplaceListing listing) async {
     try {
-      await _supabase.addMarketListing(listing);
+      await _firestore.addMarketListing(listing);
     } catch (e) {
       debugPrint("DatabaseService addMarketListing error: $e");
       rethrow;
@@ -105,16 +105,16 @@ class DatabaseService {
 
   Stream<List<MarketplaceListing>> getMarketListingsStream() {
     try {
-      return _supabase.getMarketListingsStream();
+      return _firestore.getMarketListingsStream();
     } catch (e) {
       debugPrint("DatabaseService getMarketListingsStream error: $e");
-      return Stream.fromFuture(_supabase.getMarketListings());
+      return Stream.fromFuture(_firestore.getMarketListings());
     }
   }
 
   Future<List<MarketplaceListing>> getMarketListings() async {
     try {
-      return await _supabase.getMarketListings();
+      return await _firestore.getMarketListings();
     } catch (e) {
       debugPrint("DatabaseService getMarketListings error: $e");
       return [];
@@ -123,7 +123,7 @@ class DatabaseService {
 
   Future<void> deleteMarketListing(String listingId) async {
     try {
-      await _supabase.deleteMarketListing(listingId);
+      await _firestore.deleteMarketListing(listingId);
     } catch (e) {
       debugPrint("DatabaseService deleteMarketListing error: $e");
       rethrow;
@@ -132,7 +132,7 @@ class DatabaseService {
 
   Future<void> markListingSold(String listingId) async {
     try {
-      await _supabase.markListingSold(listingId);
+      await _firestore.markListingSold(listingId);
     } catch (e) {
       debugPrint("DatabaseService markListingSold error: $e");
       rethrow;

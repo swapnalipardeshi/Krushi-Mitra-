@@ -82,9 +82,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           _selectedIrrigation = existingProfile.irrigationSource;
         });
       } else {
-        // 2. Fallback to Supabase Auth display name if new profile
+        // 2. Fallback to Auth display name if new profile
         final user = ref.read(authServiceProvider).currentUser;
-        final fullName = user?.userMetadata?['full_name'] as String?;
+        final fullName = user?.displayName;
         if (fullName != null && fullName.isNotEmpty && _nameController.text.isEmpty) {
           setState(() {
             _nameController.text = fullName;
@@ -105,13 +105,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   void _finishSetup() async {
     final user = ref.read(authServiceProvider).currentUser;
-    final userId = user?.id ?? ref.read(currentUserProvider).value?.id ?? 'farmer_${DateTime.now().millisecondsSinceEpoch}';
+    final userId = user?.uid ?? ref.read(currentUserProvider).value?.id ?? 'farmer_${DateTime.now().millisecondsSinceEpoch}';
 
     if (_nameController.text.isNotEmpty && _selectedState != null && _landSizeController.text.isNotEmpty) {
       setState(() => _isUploading = true);
       
       final existingProfile = ref.read(currentUserProvider).value;
-      String? photoUrl = existingProfile?.photoUrl ?? user?.userMetadata?['avatar_url'] as String?;
+      String? photoUrl = existingProfile?.photoUrl ?? user?.photoURL;
 
       if (_imageFile != null) {
         try {
@@ -166,7 +166,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 child: ListBody(
                   children: [
                     Text(
-                      'We couldn\'t save your profile to Supabase database.',
+                      'We couldn\'t save your profile to the cloud database.',
                       style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 12),
@@ -196,8 +196,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     const SizedBox(height: 6),
                     Text(
                       '1. Ensure you have an active internet connection.\n'
-                      '2. Verify public.farmers table exists in Supabase.\n'
-                      '3. Check Supabase RLS security policies.',
+                      '2. Verify Firestore database is reachable.\n'
+                      '3. Check Firestore security rules.',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         color: AppColors.textSecondary,

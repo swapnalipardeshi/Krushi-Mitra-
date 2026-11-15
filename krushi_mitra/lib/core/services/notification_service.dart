@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../firebase_options.dart';
-import 'supabase_service.dart';
 
 // Top-level function for background message handling
 @pragma('vm:entry-point')
@@ -46,13 +47,15 @@ class NotificationService {
       String? token = await _fcm!.getToken();
       debugPrint('FCM Token: $token');
 
-      // Sync FCM token with Supabase farmer profile if user is logged in
-      final currentUser = SupabaseService.client?.auth.currentUser;
+      // Sync FCM token with Firestore farmer profile if user is logged in
+      final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null && token != null && token.isNotEmpty) {
         try {
-          await SupabaseService.client?.from('farmers').update({
+          await FirebaseFirestore.instance.collection('farmers').doc(currentUser.uid).set({
             'fcm_token': token,
-          }).eq('id', currentUser.id);
+            'fcmToken': token,
+            'token_updated_at': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
         } catch (_) {}
       }
 

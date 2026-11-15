@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:dio/dio.dart';
-import 'supabase_service.dart';
 
 class GeminiService {
   static final GeminiService _instance = GeminiService._internal();
@@ -12,27 +10,27 @@ class GeminiService {
 
   int _currentKeyIndex = 0;
   final List<String> _apiKeys = [];
-  
-  // Valid, actively supported Gemini models (2025-2026 stable)
+
+  // Actively supported, high-speed Gemini models (2025-2026 stable)
   static const _modelFallbacks = [
-    'gemini-3.5-flash',
-    'gemini-3.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-1.5-flash',
   ];
   int _currentModelIndex = 0;
 
   // In-memory query response cache (2 hours TTL)
   final Map<String, _CachedAiResponse> _responseCache = {};
-  
+
   void initialize() {
     _apiKeys.clear();
     try {
-      // Check for primary GEMINI_API_KEY or numbered keys
       final primaryKey = dotenv.env['GEMINI_API_KEY'];
       if (primaryKey != null && primaryKey.isNotEmpty && !primaryKey.contains('YOUR_') && primaryKey.length > 20) {
         _apiKeys.add(primaryKey.trim());
       }
 
-      for (int i = 1; i <= 4; i++) {
+      for (int i = 1; i <= 6; i++) {
         final key = dotenv.env['GEMINI_KEY_$i'];
         if (key != null && key.isNotEmpty && !key.contains('YOUR_') && key.length > 20 && !_apiKeys.contains(key.trim())) {
           _apiKeys.add(key.trim());
@@ -54,11 +52,11 @@ class GeminiService {
 
   GenerativeModel getModel({String? modelName, String? systemPrompt}) {
     if (_apiKeys.isEmpty) initialize();
-    
+
     final apiKey = _apiKeys.isNotEmpty ? _apiKeys[_currentKeyIndex % _apiKeys.length] : '';
     final model = modelName ?? _currentModel;
     final formattedModel = model.startsWith('models/') ? model : 'models/$model';
-    
+
     return GenerativeModel(
       model: formattedModel,
       apiKey: apiKey,
@@ -75,18 +73,19 @@ class GeminiService {
   void rotateKey() {
     if (_apiKeys.length > 1) {
       _currentKeyIndex = (_currentKeyIndex + 1) % _apiKeys.length;
+      debugPrint('GeminiService: Rotated to API key index $_currentKeyIndex');
     }
   }
 
   void _rotateModel() {
     _currentModelIndex = (_currentModelIndex + 1) % _modelFallbacks.length;
+    debugPrint('GeminiService: Switched to model $_currentModel');
   }
 
   /// High-level text generation:
   /// 1. Checks in-memory cache for instant zero-latency response.
-  /// 2. Invokes secure Supabase Edge Function 'gemini-advisor' (server-side API key).
-  /// 3. Falls back to direct client-side Gemini with max 2 retries and exponential backoff.
-  /// 4. Falls back to Groq if configured and Gemini is rate-limited.
+  /// 2. Direct Gemini with active key rotation and retries.
+  /// 3. Instant seamless fallback to Groq Qwen if Gemini is rate-limited or busy.
   Future<String> generateText(String prompt, {String? systemPrompt}) async {
     final cacheKey = '${prompt.trim().hashCode}_${systemPrompt?.trim().hashCode ?? 0}';
 
@@ -97,35 +96,7 @@ class GeminiService {
       return cached.text;
     }
 
-    // 2. Try Supabase Edge Function first (Best Security Practice)
-    if (SupabaseService.isInitialized) {
-      try {
-        final client = SupabaseService.client;
-        if (client != null) {
-          final res = await client.functions.invoke(
-            'gemini-advisor',
-            body: {
-              'action': 'generate_text',
-              'prompt': prompt,
-              'systemPrompt': systemPrompt,
-              'model': _currentModel,
-            },
-          );
-
-          if (res.status == 200 && res.data != null) {
-            final text = res.data['text'] as String?;
-            if (text != null && text.isNotEmpty) {
-              _cacheResponse(cacheKey, text);
-              return text;
-            }
-          }
-        }
-      } catch (edgeErr) {
-        debugPrint('GeminiService: Edge function notice: $edgeErr. Falling back to client SDK.');
-      }
-    }
-
-    // 3. Client-side SDK fallback with controlled retries (Max 2)
+    // 2. Primary: Gemini SDK
     try {
       final text = await runWithRetry((model) async {
         final response = await model.generateContent([Content.text(prompt)]);
@@ -139,61 +110,32 @@ class GeminiService {
       _cacheResponse(cacheKey, text);
       return text;
     } catch (e) {
-      debugPrint('Gemini client SDK failed: $e. Checking Groq fallback...');
+      debugPrint('Gemini client notice: $e. Activating Groq fallback...');
 
-      // 4. Try Groq fallback if configured
-      final groqKey = dotenv.env['GROQ_API_KEY'];
-      if (groqKey != null && groqKey.isNotEmpty && !groqKey.contains('YOUR_')) {
+      // 3. Fallback: Groq (ultra fast high availability)
+      final groqKeys = [
+        dotenv.env['GROQ_API_KEY'],
+        dotenv.env['GROQ_API_KEY_2'],
+      ].whereType<String>().where((k) => k.isNotEmpty && !k.contains('YOUR_')).toList();
+
+      for (final groqKey in groqKeys) {
         try {
           final groqRes = await _callGroq(prompt, systemPrompt: systemPrompt, apiKey: groqKey);
-          _cacheResponse(cacheKey, groqRes);
-          return groqRes;
+          if (groqRes.isNotEmpty) {
+            _cacheResponse(cacheKey, groqRes);
+            return groqRes;
+          }
         } catch (groqErr) {
-          debugPrint('Groq fallback error: $groqErr');
+          debugPrint('Groq fallback notice: $groqErr');
         }
       }
 
-      // 5. Friendly user-facing fallback error
-      if (e.toString().contains('429') || e.toString().contains('quota') || e.toString().contains('RESOURCE_EXHAUSTED')) {
-        throw Exception('AI_BUSY: कृषी मित्र AI सल्लागार सध्या व्यस्त आहे (दैनिक मर्यादा गाठली). कृपया थोड्या वेळाने प्रयत्न करा किंवा ऑफलाइन माहिती तपासा.');
-      }
       rethrow;
     }
   }
 
   /// Multimodal image + text generation (used by Crop Doctor)
   Future<String> generateMultimodal(Uint8List imageBytes, String prompt, {String? systemPrompt}) async {
-    // 1. Try Supabase Edge Function
-    if (SupabaseService.isInitialized) {
-      try {
-        final client = SupabaseService.client;
-        if (client != null) {
-          final base64Image = base64Encode(imageBytes);
-          final res = await client.functions.invoke(
-            'gemini-advisor',
-            body: {
-              'action': 'diagnose_crop',
-              'prompt': prompt,
-              'systemPrompt': systemPrompt,
-              'imageBase64': base64Image,
-              'mimeType': 'image/jpeg',
-              'model': _currentModel,
-            },
-          );
-
-          if (res.status == 200 && res.data != null) {
-            final text = res.data['text'] as String?;
-            if (text != null && text.isNotEmpty) {
-              return text;
-            }
-          }
-        }
-      } catch (edgeErr) {
-        debugPrint('GeminiService: Edge multimodal notice: $edgeErr');
-      }
-    }
-
-    // 2. Client-side SDK fallback
     return await runWithRetry((model) async {
       final content = [
         Content('user', [
@@ -208,6 +150,67 @@ class GeminiService {
       }
       return text;
     }, systemPrompt: systemPrompt, retries: 2);
+  }
+
+  /// Interactive multi-turn chat with automatic Groq failover
+  Future<String> generateChatResponse({
+    required List<Map<String, dynamic>> history,
+    required String userMessage,
+    String? systemPrompt,
+  }) async {
+    // 1. Try Gemini Chat
+    try {
+      return await runWithRetry((model) async {
+        final List<Content> chatHistory = [];
+        for (var i = 0; i < history.length; i++) {
+          final msg = history[i];
+          final role = msg['role'] == 'user' ? 'user' : 'model';
+          final content = msg['content'] as String;
+          if (i == history.length - 1 && role == 'user' && content == userMessage) continue;
+          if (chatHistory.isNotEmpty && chatHistory.last.role == role) continue;
+          chatHistory.add(Content(role, [TextPart(content)]));
+        }
+
+        final chatSession = model.startChat(history: chatHistory);
+        final response = await chatSession.sendMessage(Content.text(userMessage));
+        final text = response.text;
+        if (text == null || text.trim().isEmpty) {
+          throw Exception('Empty response from Gemini chat');
+        }
+        return text;
+      }, systemPrompt: systemPrompt, retries: 2);
+    } catch (e) {
+      debugPrint('Gemini Chat notice: $e. Seamlessly falling back to Groq...');
+
+      // 2. Groq Failover
+      final groqKeys = [
+        dotenv.env['GROQ_API_KEY'],
+        dotenv.env['GROQ_API_KEY_2'],
+      ].whereType<String>().where((k) => k.isNotEmpty && !k.contains('YOUR_')).toList();
+
+      if (groqKeys.isNotEmpty) {
+        final List<Map<String, String>> groqMessages = [];
+        if (systemPrompt != null) {
+          groqMessages.add({'role': 'system', 'content': systemPrompt});
+        }
+        for (final msg in history) {
+          final role = msg['role'] == 'user' ? 'user' : 'assistant';
+          groqMessages.add({'role': role, 'content': msg['content'] as String});
+        }
+        groqMessages.add({'role': 'user', 'content': userMessage});
+
+        for (final key in groqKeys) {
+          try {
+            final res = await _callGroqChat(groqMessages, apiKey: key);
+            if (res.isNotEmpty) return res;
+          } catch (groqErr) {
+            debugPrint('Groq chat key error: $groqErr');
+          }
+        }
+      }
+
+      rethrow;
+    }
   }
 
   Future<T> runWithRetry<T>(
@@ -271,6 +274,26 @@ class GeminiService {
           {'role': 'user', 'content': prompt},
         ],
         'temperature': 0.5,
+      },
+    );
+    return res.data['choices'][0]['message']['content'] as String;
+  }
+
+  Future<String> _callGroqChat(List<Map<String, String>> messages, {required String apiKey}) async {
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 12),
+      receiveTimeout: const Duration(seconds: 15),
+    ));
+    final res = await dio.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      options: Options(headers: {
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'application/json',
+      }),
+      data: {
+        'model': 'qwen/qwen3.8-27b',
+        'messages': messages,
+        'temperature': 0.6,
       },
     );
     return res.data['choices'][0]['message']['content'] as String;

@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../../data/models/market_price_model.dart';
-import 'supabase_service.dart';
+import 'firestore_service.dart';
 
 class MarketService {
   static final MarketService _instance = MarketService._internal();
@@ -13,7 +13,7 @@ class MarketService {
   MarketService._internal();
 
   late final Dio _dio;
-  final SupabaseService _supabase = SupabaseService();
+  final FirestoreService _firestore = FirestoreService();
   static const String _cacheKey = 'cached_market_data';
 
   void initialize() {
@@ -45,18 +45,16 @@ class MarketService {
       }
     }
 
-    // 1. Check Supabase mandi_prices table first
-    if (SupabaseService.isInitialized) {
-      try {
-        final supabasePrices = await _supabase.getMandiPrices(state: state, commodity: commodity);
-        if (supabasePrices.isNotEmpty) {
-          debugPrint('getMarketPrices: Found ${supabasePrices.length} records in Supabase mandi_prices.');
-          await _cacheMarket(supabasePrices);
-          return supabasePrices;
-        }
-      } catch (e) {
-        debugPrint('getMarketPrices: Supabase query notice: $e');
+    // 1. Check Firestore mandi_prices collection first
+    try {
+      final firestorePrices = await _firestore.getMandiPrices(state: state, commodity: commodity);
+      if (firestorePrices.isNotEmpty) {
+        debugPrint('getMarketPrices: Found ${firestorePrices.length} records in Firestore mandi_prices.');
+        await _cacheMarket(firestorePrices);
+        return firestorePrices;
       }
+    } catch (e) {
+      debugPrint('getMarketPrices: Firestore query notice: $e');
     }
 
     // 2. Try Agmarknet Official Government API if key is provided
@@ -88,8 +86,8 @@ class MarketService {
           if (records.isNotEmpty) {
             final result = records.map((r) => MarketPrice.fromJson(r)).toList();
             await _cacheMarket(result);
-            // Async sync to Supabase for persistence
-            _supabase.upsertMandiPrices(result);
+            // Async sync to Firestore for persistence
+            _firestore.upsertMandiPrices(result);
             return result;
           }
         }

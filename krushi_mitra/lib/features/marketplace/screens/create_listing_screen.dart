@@ -102,7 +102,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       final url = await StorageService().uploadMarketplaceImage(id, _imageFile!);
       if (url != null && url.isNotEmpty) return url;
     } catch (e) {
-      debugPrint('Supabase Storage upload error: $e');
+      debugPrint('Storage upload error: $e');
     }
     try {
       final bytes = await _imageFile!.readAsBytes();
@@ -197,8 +197,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
       final listing = MarketplaceListing(
         id: id,
-        sellerId: widget.existingListing?.sellerId ?? user?.id ?? '',
-        farmerName: widget.existingListing?.farmerName ?? profile?.name ?? user?.userMetadata?['name']?.toString() ?? 'Farmer',
+        sellerId: widget.existingListing?.sellerId ?? user?.uid ?? '',
+        farmerName: widget.existingListing?.farmerName ?? profile?.name ?? user?.displayName ?? 'Farmer',
         commodity: _commodityController.text.trim(),
         quantity: double.tryParse(_quantityController.text) ?? 0,
         unit: _unit,

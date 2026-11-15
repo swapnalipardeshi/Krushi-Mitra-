@@ -255,7 +255,9 @@ class _FarmDiaryScreenState extends ConsumerState<FarmDiaryScreen> {
           return StreamBuilder<List<FarmDiaryEntry>>(
             stream: ref.watch(databaseServiceProvider).getDiaryEntries(profile.id),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: LoadingWidget());
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                return const Center(child: LoadingWidget());
+              }
               final entries = snapshot.data ?? [];
               
               return CustomScrollView(

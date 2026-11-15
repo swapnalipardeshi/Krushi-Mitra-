@@ -143,7 +143,7 @@ class AuthGate extends ConsumerWidget {
       }
     }
 
-    // 2. Otherwise route based on Supabase Authentication session
+    // 2. Otherwise route based on Firebase Authentication session
     final authState = ref.watch(authStateProvider);
 
     return authState.when(

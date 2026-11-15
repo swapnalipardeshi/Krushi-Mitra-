@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -23,6 +23,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
 
+  String _verificationId = '';
   bool _isLogin = true;
   bool _isPhoneLogin = false;
   bool _isOtpSent = false;
@@ -76,24 +77,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
         if (!_isOtpSent) {
           final phone = _phoneController.text.trim();
           final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
-          await Supabase.instance.client.auth.signInWithOtp(phone: formattedPhone);
-          setState(() => _isOtpSent = true);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Verification code sent to $formattedPhone'),
-              backgroundColor: AppColors.primaryEmerald,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ));
-          }
-        } else {
-          final phone = _phoneController.text.trim();
-          final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
-          await Supabase.instance.client.auth.verifyOTP(
-            phone: formattedPhone,
-            token: _otpController.text.trim(),
-            type: OtpType.sms,
+          await auth.verifyPhoneNumber(
+            phoneNumber: formattedPhone,
+            verificationCompleted: (PhoneAuthCredential credential) async {
+              await FirebaseAuth.instance.signInWithCredential(credential);
+              _navigateToHome();
+            },
+            verificationFailed: (FirebaseAuthException e) {
+              if (mounted) {
+                setState(() => _isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(_friendlyError(e.message ?? e.toString())),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ));
+              }
+            },
+            codeSent: (String verificationId, int? resendToken) {
+              if (mounted) {
+                setState(() {
+                  _verificationId = verificationId;
+                  _isOtpSent = true;
+                  _isLoading = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('Verification code sent to $formattedPhone'),
+                  backgroundColor: AppColors.primaryEmerald,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ));
+              }
+            },
+            codeAutoRetrievalTimeout: (String verificationId) {
+              _verificationId = verificationId;
+            },
           );
+          return;
+        } else {
+          await auth.signInWithPhoneOtp(_verificationId, _otpController.text.trim());
           _navigateToHome();
         }
       } else {
@@ -103,25 +125,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
             _passwordController.text,
           );
         } else {
-          await auth.signUpWithEmail(
+          final cred = await auth.signUpWithEmail(
             _emailController.text.trim(),
             _passwordController.text,
             fullName: _nameController.text.trim(),
           );
-          // Check if session was created (email verification may be required)
-          final session = Supabase.instance.client.auth.currentSession;
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(session != null
-                  ? 'Account created successfully!'
-                  : 'Account created! Please check your email for verification link.'),
+              content: const Text('Account created successfully!'),
               backgroundColor: AppColors.primaryEmerald,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ));
           }
-          if (session == null) {
-            // Don't navigate — user needs to verify email first
+          if (cred.user == null) {
             setState(() => _isLoading = false);
             return;
           }
@@ -149,7 +166,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   Future<void> _handleGoogleLogin() async {
     setState(() => _isLoading = true);
     try {
-      await ref.read(authServiceProvider).signInWithGoogle();
+      final cred = await ref.read(authServiceProvider).signInWithGoogle();
+      if (cred != null) {
+        _navigateToHome();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -213,22 +233,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
 
   String _friendlyError(String error) {
     final lower = error.toLowerCase();
-    if (lower.contains('invalid login credentials') || lower.contains('invalid_credentials')) {
+    if (lower.contains('invalid-credential') || lower.contains('wrong-password') || lower.contains('user-not-found')) {
       return 'Incorrect email or password. Please try again.';
     }
-    if (lower.contains('user already registered') || lower.contains('user_already_exists')) {
+    if (lower.contains('email-already-in-use')) {
       return 'This email is already registered. Please sign in instead.';
     }
-    if (lower.contains('weak_password') || lower.contains('password should be at least')) {
+    if (lower.contains('weak-password')) {
       return 'Password is too weak. Please use at least 6 characters.';
     }
-    if (lower.contains('rate limit') || lower.contains('over_request_rate_limit')) {
+    if (lower.contains('too-many-requests')) {
       return 'Too many attempts. Please wait a minute and try again.';
     }
-    if (lower.contains('socketexception') || lower.contains('network') || lower.contains('failed host lookup')) {
+    if (lower.contains('network') || lower.contains('socketexception') || lower.contains('failed host lookup')) {
       return 'Network connection issue. Please check your internet connection.';
     }
-    return 'Authentication notice: ${error.replaceAll(RegExp(r'Exception: |AuthException: '), '')}';
+    return 'Authentication notice: ${error.replaceAll(RegExp(r'\[.*?\]'), '').trim()}';
   }
 
   int get _passwordStrength {
@@ -292,7 +312,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           Text(
                             _isPhoneLogin
                                 ? (_isOtpSent ? 'Enter the 6-digit code sent to your phone' : 'We\'ll send you a verification code')
-                                : (_isLogin ? 'Welcome back to your farming companion' : 'Start your smart farming journey with Supabase'),
+                                : (_isLogin ? 'Welcome back to your farming companion' : 'Start your smart farming journey with Krushi Mitra'),
                             style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
                             textAlign: TextAlign.center,
                           ),

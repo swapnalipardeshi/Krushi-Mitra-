@@ -4,7 +4,7 @@
 // and exposes a Judge Debug State Panel.
 
 import 'package:flutter/foundation.dart';
-import 'supabase_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ConflictCheckResult {
   final bool hasConflict;
@@ -132,7 +132,7 @@ class ConflictCheckService {
     return ConflictCheckResult.noConflict(activityType);
   }
 
-  /// Log Farmer Override Decision to Supabase for Auditability
+  /// Log Farmer Override Decision to Firestore for Auditability
   Future<void> logConflictOverride({
     required ConflictCheckResult conflict,
     required String farmerName,
@@ -140,19 +140,18 @@ class ConflictCheckService {
     String? userReason,
   }) async {
     try {
-      if (SupabaseService.isInitialized) {
-        await SupabaseService.client?.from('conflict_audit_logs').insert({
-          'farmer_name': farmerName,
-          'location': location,
-          'activity_type': conflict.activityType,
-          'conflict_title': conflict.title,
-          'conflict_reason': conflict.reason,
-          'rain_probability': conflict.rainProbability,
-          'user_reason': userReason ?? 'Farmer decided to proceed anyway',
-          'raw_inputs': conflict.rawInputs,
-        });
-        debugPrint('Conflict Check: Override logged to Supabase conflict_audit_logs');
-      }
+      await FirebaseFirestore.instance.collection('conflict_audit_logs').add({
+        'farmer_name': farmerName,
+        'location': location,
+        'activity_type': conflict.activityType,
+        'conflict_title': conflict.title,
+        'conflict_reason': conflict.reason,
+        'rain_probability': conflict.rainProbability,
+        'user_reason': userReason ?? 'Farmer decided to proceed anyway',
+        'raw_inputs': conflict.rawInputs,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      debugPrint('Conflict Check: Override logged to Firestore conflict_audit_logs');
     } catch (e) {
       debugPrint('Conflict Check audit log notice: $e');
     }

@@ -53,7 +53,7 @@ Future<void> saveLocalListings(List<MarketplaceListing> listings) async {
 Future<List<MarketplaceListing>> getCachedMarketplace() async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString('cached_supabase_marketplace');
+    final jsonStr = prefs.getString('cached_cloud_marketplace') ?? prefs.getString('cached_supabase_marketplace');
     if (jsonStr != null) {
       final List list = json.decode(jsonStr);
       return list.map((e) => MarketplaceListing.fromJson(e as Map<String, dynamic>)).toList();
@@ -72,7 +72,7 @@ Future<void> saveCachedMarketplace(List<MarketplaceListing> listings) async {
       map['dateListed'] = e.dateListed.toIso8601String();
       return map;
     }).toList();
-    await prefs.setString('cached_supabase_marketplace', json.encode(jsonList));
+    await prefs.setString('cached_cloud_marketplace', json.encode(jsonList));
   } catch (e) {
     debugPrint('Error saving cached marketplace listings: $e');
   }
@@ -180,7 +180,7 @@ List<MarketplaceListing> getStaticFallbackListings() {
   ];
 }
 
-/// Stream of all marketplace listings from Supabase with instant offline caching
+/// Stream of all marketplace listings with instant offline caching
 final marketplaceStreamProvider = StreamProvider<List<MarketplaceListing>>((ref) {
   final db = ref.watch(databaseServiceProvider);
   final controller = StreamController<List<MarketplaceListing>>();
@@ -213,7 +213,7 @@ final marketplaceStreamProvider = StreamProvider<List<MarketplaceListing>>((ref)
       }
     },
     onError: (err) async {
-      debugPrint('Supabase Marketplace Stream Error: $err. Resuming from local cache.');
+      debugPrint('Marketplace Stream Notice: $err. Resuming from local cache.');
       final local = await getLocalListings();
       final cached = await getCachedMarketplace();
       final fallbackPool = cached.isNotEmpty ? cached : getStaticFallbackListings();
@@ -236,7 +236,7 @@ final marketplaceStreamProvider = StreamProvider<List<MarketplaceListing>>((ref)
 /// Provider to get the current user's ID for ownership checks
 final currentUserIdProvider = Provider<String?>((ref) {
   final auth = ref.watch(authServiceProvider);
-  return auth.currentUser?.id;
+  return auth.currentUser?.uid;
 });
 
 /// Actions provider for adding/deleting listings

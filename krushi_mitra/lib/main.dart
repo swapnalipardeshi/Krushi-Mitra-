@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:krushi_mitra/core/services/ai_service.dart';
 import 'package:krushi_mitra/core/services/market_service.dart';
 import 'package:krushi_mitra/core/services/weather_service.dart';
@@ -29,25 +30,16 @@ void main() async {
       debugPrint("Dotenv load notice: $e. Ensure .env exists in root.");
     }
 
-    // 2. Initialize Supabase as Primary Backend (Auth, Database, Storage)
-    final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? 'https://jsqmqaqirtxvclsyjimd.supabase.co';
-    final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? 'sb_publishable_t8aZPVK2bcO52Bot7le7Dw_iGke7K-X';
-    if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
-      try {
-        await Supabase.initialize(
-          url: supabaseUrl,
-          publishableKey: supabaseKey,
-          authOptions: const FlutterAuthClientOptions(
-            authFlowType: AuthFlowType.pkce,
-            autoRefreshToken: true,
-          ),
-        ).timeout(const Duration(seconds: 4));
-        debugPrint("Supabase initialized as primary backend!");
-      } catch (e) {
-        debugPrint("Supabase initialization error: $e");
+    // 2. Initialize Firebase as Primary Backend (Auth, Firestore, Storage, FCM)
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ).timeout(const Duration(seconds: 5));
+        debugPrint("Firebase initialized as primary backend!");
       }
-    } else {
-      debugPrint("WARNING: Supabase URL or Anon Key is missing from .env!");
+    } catch (e) {
+      debugPrint("Firebase initialization notice: $e");
     }
 
     // 3. Immediately launch the Flutter UI so the OS splash screen dismisses

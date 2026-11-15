@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import 'database_provider.dart';
 import '../../data/models/farmer_model.dart';
@@ -9,7 +9,7 @@ import '../../data/models/farmer_model.dart';
 // 1. Service Provider
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
-// 2. Auth State Provider (Reactive Stream of Supabase User)
+// 2. Auth State Provider (Reactive Stream of Firebase User)
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authServiceProvider).authStateChanges;
 });
@@ -32,8 +32,8 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<Farmer?>> {
     // 1. Check current authenticated user on boot
     final initialUser = _ref.read(authServiceProvider).currentUser;
     if (initialUser != null) {
-      debugPrint("Auth Init: Active Supabase session found for UID: ${initialUser.id}");
-      fetchProfile(initialUser.id);
+      debugPrint("Auth Init: Active Firebase session found for UID: ${initialUser.uid}");
+      fetchProfile(initialUser.uid);
     } else {
       debugPrint("Auth Init: No active session. Awaiting user login.");
       state = const AsyncValue.data(null);
@@ -42,8 +42,8 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<Farmer?>> {
     // 2. Listen to real-time auth changes
     _authSubscription = _ref.read(authServiceProvider).authStateChanges.listen((user) {
       if (user != null) {
-        debugPrint("Auth Stream: User authenticated (${user.id})");
-        fetchProfile(user.id);
+        debugPrint("Auth Stream: User authenticated (${user.uid})");
+        fetchProfile(user.uid);
       } else {
         debugPrint("Auth Stream: User unauthenticated / signed out");
         state = const AsyncValue.data(null);

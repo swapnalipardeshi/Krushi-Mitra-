@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image/image.dart' as img;
 import 'gemini_service.dart';
 import 'ai_knowledge_base.dart';
@@ -292,27 +291,13 @@ $fewShot
 
 IMPORTANT: Use this context to personalize EVERY answer. Mention their crops by name, reference their location's climate, and factor in current weather when giving advice. If they ask about a crop they don't grow, still answer but note it's not in their current profile.''';
 
-      return await _gemini.runWithRetry(
-        (model) async {
-          final List<Content> chatHistory = [];
-          for (var i = 0; i < history.length; i++) {
-            final msg = history[i];
-            final role = msg['role'] == 'user' ? 'user' : 'model';
-            final content = msg['content'] as String;
-            if (i == history.length - 1 && role == 'user' && content == userMessage) continue;
-            if (chatHistory.isNotEmpty && chatHistory.last.role == role) continue;
-            chatHistory.add(Content(role, [TextPart(content)]));
-          }
+      final messageWithLang = history.isEmpty
+          ? '${_getLanguageInstruction(context.language)}\n\n$userMessage'
+          : userMessage;
 
-          final chatSession = model.startChat(history: chatHistory);
-          String messageWithLang = userMessage;
-          if (chatHistory.isEmpty) {
-            messageWithLang = '${_getLanguageInstruction(context.language)}\n\n$userMessage';
-          }
-          
-          final response = await chatSession.sendMessage(Content.text(messageWithLang));
-          return response.text ?? 'I could not generate a response. Please try again.';
-        },
+      return await _gemini.generateChatResponse(
+        history: history,
+        userMessage: messageWithLang,
         systemPrompt: enhancedSystemPrompt,
       );
     } catch (e) {
