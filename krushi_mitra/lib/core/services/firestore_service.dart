@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/farmer_model.dart';
@@ -21,11 +22,24 @@ class FirestoreService {
   final _diaryChangeController = StreamController<String>.broadcast();
   final _postChangeController = StreamController<void>.broadcast();
 
-  // Local fallback profile
+  // Local fallback profile that prioritizes real Firebase user identity
   Farmer getLocalFallbackProfile([String? uid]) {
+    final fbUser = FirebaseAuth.instance.currentUser;
+    String name = 'Farmer';
+    if (fbUser?.displayName != null && fbUser!.displayName!.trim().isNotEmpty) {
+      name = fbUser.displayName!.trim();
+    } else if (fbUser?.email != null && fbUser!.email!.trim().isNotEmpty) {
+      final part = fbUser.email!.split('@').first;
+      name = part[0].toUpperCase() + part.substring(1);
+    } else if (uid != null && uid.isNotEmpty && uid != 'guest_user') {
+      name = 'Farmer';
+    } else {
+      name = 'Kisan Mitra';
+    }
+
     return Farmer(
-      id: uid ?? 'farmer_default',
-      name: 'Kisan Mitra',
+      id: uid ?? fbUser?.uid ?? 'farmer_default',
+      name: name,
       state: 'Maharashtra',
       district: 'Nashik',
       landSize: 2.5,
@@ -41,13 +55,15 @@ class FirestoreService {
   // =========================================================================
 
   Future<Farmer?> getFarmerProfile(String uid) async {
-    // 1. Try local cache first for instant loading
+    final fbUser = FirebaseAuth.instance.currentUser;
+    final email = fbUser?.email?.trim().toLowerCase();
+
+    // 1. Try local cache in order of priority:
     try {
       final prefs = await SharedPreferences.getInstance();
+
+      // Check 1: By UID
       String? localStr = prefs.getString('local_farmer_profile_$uid');
-      if (localStr == null || localStr.isEmpty) {
-        localStr = prefs.getString('active_farmer_profile');
-      }
       if (localStr != null && localStr.isNotEmpty) {
         final data = json.decode(localStr);
         if (data is Map<String, dynamic>) {
@@ -55,7 +71,37 @@ class FirestoreService {
           return Farmer.fromJson(data);
         }
       }
-    } catch (_) {}
+
+      // Check 2: By Email
+      if (email != null && email.isNotEmpty) {
+        localStr = prefs.getString('local_farmer_profile_$email');
+        if (localStr != null && localStr.isNotEmpty) {
+          final data = json.decode(localStr);
+          if (data is Map<String, dynamic>) {
+            data['id'] = uid;
+            final p = Farmer.fromJson(data);
+            await prefs.setString('local_farmer_profile_$uid', json.encode(p.toJson()));
+            return p;
+          }
+        }
+      }
+
+      // Check 3: Active Profile or Last Profile
+      localStr = prefs.getString('active_farmer_profile') ?? prefs.getString('last_farmer_profile');
+      if (localStr != null && localStr.isNotEmpty) {
+        final data = json.decode(localStr);
+        if (data is Map<String, dynamic>) {
+          data['id'] = uid;
+          final p = Farmer.fromJson(data);
+          if (p.name.isNotEmpty && p.name != 'Kisan Mitra') {
+            await prefs.setString('local_farmer_profile_$uid', json.encode(p.toJson()));
+            return p;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Local cache read error: $e");
+    }
 
     // 2. Fetch from Firestore
     try {
@@ -69,24 +115,43 @@ class FirestoreService {
           final encoded = json.encode(profile.toJson());
           await prefs.setString('local_farmer_profile_$uid', encoded);
           await prefs.setString('active_farmer_profile', encoded);
+          if (email != null) await prefs.setString('local_farmer_profile_$email', encoded);
         } catch (_) {}
         return profile;
       }
-      return getLocalFallbackProfile(uid);
     } catch (e) {
       debugPrint("Firestore getFarmerProfile error: $e");
-      return getLocalFallbackProfile(uid);
     }
+
+    // 3. Fallback with real user identity
+    final fallback = getLocalFallbackProfile(uid);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enc = json.encode(fallback.toJson());
+      await prefs.setString('local_farmer_profile_$uid', enc);
+      await prefs.setString('active_farmer_profile', enc);
+    } catch (_) {}
+    return fallback;
   }
 
-  Future<void> saveFarmerProfile(Farmer farmer) async {
-    // 1. Save locally first for zero-latency UI updates
+  Future<void> saveFarmerProfile(Farmer farmer, {String? email}) async {
+    // 1. Save locally first for zero-latency UI updates & reliable offline persistence
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonStr = json.encode(farmer.toJson());
       await prefs.setString('local_farmer_profile_${farmer.id}', jsonStr);
       await prefs.setString('active_farmer_profile', jsonStr);
-    } catch (_) {}
+      await prefs.setString('last_farmer_profile', jsonStr);
+      if (email != null && email.isNotEmpty) {
+        await prefs.setString('local_farmer_profile_${email.trim().toLowerCase()}', jsonStr);
+      }
+      final fbUser = FirebaseAuth.instance.currentUser;
+      if (fbUser?.email != null) {
+        await prefs.setString('local_farmer_profile_${fbUser!.email!.trim().toLowerCase()}', jsonStr);
+      }
+    } catch (e) {
+      debugPrint("Local saveFarmerProfile error: $e");
+    }
 
     // 2. Persist to Firestore
     try {

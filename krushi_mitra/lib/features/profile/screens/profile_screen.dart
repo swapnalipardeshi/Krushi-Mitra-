@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
@@ -32,7 +33,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(title: 'Settings'),
+      appBar: const CustomAppBar(title: 'Farmer Profile & Account'),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
@@ -42,6 +43,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _buildProfileHeader(profile),
               const SizedBox(height: 16),
               _buildQuickActions(context),
+              const SizedBox(height: 16),
+              _buildAccountDetailsSection(profile, context),
               const SizedBox(height: 16),
               _buildSettingsSection(profile),
               const SizedBox(height: 24),
@@ -235,6 +238,224 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAccountDetailsSection(Farmer? profile, BuildContext context) {
+    final fbUser = FirebaseAuth.instance.currentUser;
+    final registeredEmail = profile?.email ?? fbUser?.email;
+    final soil = (profile?.soilType != null && profile!.soilType!.isNotEmpty)
+        ? profile.soilType!
+        : 'Not specified';
+    final irrigation = (profile?.irrigationSource != null && profile!.irrigationSource!.isNotEmpty)
+        ? profile.irrigationSource!
+        : 'Not specified';
+    final crops = profile?.cropsGrown ?? [];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.outline.withValues(alpha: 0.6)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryEmerald.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.agriculture_rounded, color: AppColors.primaryEmerald, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Farm & Account Details',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_rounded, size: 16, color: AppColors.primaryEmerald),
+                  label: Text(
+                    'Edit',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.primaryEmerald,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.08),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+
+            // Name
+            _buildDetailRow(
+              Icons.person_rounded,
+              'Farmer Name',
+              profile?.name ?? 'Not set',
+            ),
+            const SizedBox(height: 12),
+
+            // Email
+            if (registeredEmail != null && registeredEmail.isNotEmpty) ...[
+              _buildDetailRow(
+                Icons.email_rounded,
+                'Email Address',
+                registeredEmail,
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Location
+            _buildDetailRow(
+              Icons.location_on_rounded,
+              'Location',
+              profile != null ? '${profile.district}, ${profile.state}' : 'Not set',
+            ),
+            const SizedBox(height: 12),
+
+            // Land Size
+            _buildDetailRow(
+              Icons.square_foot_rounded,
+              'Farm Land Size',
+              profile != null ? '${profile.landSize} Acres' : 'Not set',
+            ),
+            const SizedBox(height: 12),
+
+            // Soil Type
+            _buildDetailRow(
+              Icons.grass_rounded,
+              'Soil Type',
+              soil,
+            ),
+            const SizedBox(height: 12),
+
+            // Irrigation Source
+            _buildDetailRow(
+              Icons.water_drop_rounded,
+              'Irrigation Source',
+              irrigation,
+            ),
+            const SizedBox(height: 16),
+
+            // Crops Grown
+            Text(
+              'Crops Cultivated',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (crops.isEmpty)
+              Text(
+                'No crops selected',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.textHint,
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: crops.map((crop) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryEmerald.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryEmerald.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🌱 ', style: TextStyle(fontSize: 13)),
+                        Text(
+                          crop,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryEmerald,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

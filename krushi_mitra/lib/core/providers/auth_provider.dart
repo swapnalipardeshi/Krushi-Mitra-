@@ -66,13 +66,28 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<Farmer?>> {
 
     try {
       final profile = await _ref.read(databaseServiceProvider).getFarmerProfile(uid);
-      final resolved = profile ?? _ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
-      debugPrint("Profile Fetch: Loaded profile for '${resolved.name}'");
-      state = AsyncValue.data(resolved);
+      if (profile != null && profile.name != 'Kisan Mitra') {
+        debugPrint("Profile Fetch: Loaded custom profile for '${profile.name}'");
+        state = AsyncValue.data(profile);
+      } else {
+        final current = state.value;
+        if (current != null && current.id == uid && current.name != 'Kisan Mitra') {
+          debugPrint("Profile Fetch: Retaining valid memory profile for '${current.name}'");
+        } else {
+          final fallback = profile ?? _ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
+          debugPrint("Profile Fetch: Loaded profile for '${fallback.name}'");
+          state = AsyncValue.data(fallback);
+        }
+      }
     } catch (e) {
       debugPrint("Profile Fetch Notice: $e - using resilient fallback profile");
-      final fallback = _ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
-      state = AsyncValue.data(fallback);
+      final current = state.value;
+      if (current != null && current.id == uid && current.name != 'Kisan Mitra') {
+        // Keep current valid profile
+      } else {
+        final fallback = _ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
+        state = AsyncValue.data(fallback);
+      }
     } finally {
       _isFetching = false;
     }
@@ -110,9 +125,9 @@ class ProfileActionNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> saveProfile(Farmer farmer) async {
     state = const AsyncValue.loading();
     try {
-      await _ref.read(databaseServiceProvider).saveFarmerProfile(farmer);
-      // Re-trigger profile fetch in the main notifier
-      await _ref.read(currentUserProvider.notifier).fetchProfile(farmer.id);
+      final email = farmer.email ?? _ref.read(authServiceProvider).currentUser?.email;
+      await _ref.read(databaseServiceProvider).saveFarmerProfile(farmer, email: email);
+      _ref.read(currentUserProvider.notifier).setProfile(farmer);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       debugPrint("Save Profile Error: $e");

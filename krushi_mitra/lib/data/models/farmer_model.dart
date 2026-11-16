@@ -1,6 +1,7 @@
 class Farmer {
   final String id;
   final String name;
+  final String? email;
   final String? photoUrl;
   final String state;
   final String district;
@@ -13,6 +14,7 @@ class Farmer {
   Farmer({
     required this.id,
     required this.name,
+    this.email,
     this.photoUrl,
     required this.state,
     required this.district,
@@ -33,12 +35,12 @@ class Farmer {
   // Firebase User-like compatibility getters
   String? get displayName => name;
   bool get isAnonymous => id.isEmpty || name == 'Guest';
-  String? get email => null;
 
   factory Farmer.fromJson(Map<String, dynamic> json) {
     return Farmer(
       id: (json['id'] ?? 'farmer_default').toString(),
       name: (json['name'] ?? 'Kisan Mitra').toString(),
+      email: json['email'] as String?,
       photoUrl: json['photoUrl'] as String? ?? json['photo_url'] as String?,
       state: (json['state'] ?? 'Maharashtra').toString(),
       district: (json['district'] ?? 'Nashik').toString(),
@@ -57,6 +59,7 @@ class Farmer {
     return {
       'id': id,
       'name': name,
+      'email': email,
       'photoUrl': photoUrl,
       'photo_url': photoUrl,
       'state': state,
@@ -83,6 +86,7 @@ class Farmer {
   Farmer copyWith({
     String? id,
     String? name,
+    String? email,
     String? photoUrl,
     String? state,
     String? district,
@@ -98,6 +102,7 @@ class Farmer {
     return Farmer(
       id: id ?? this.id,
       name: name ?? this.name,
+      email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
       state: state ?? this.state,
       district: district ?? this.district,

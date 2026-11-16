@@ -16,9 +16,9 @@ class DatabaseService {
 
   // --- Farmer Profile ---
 
-  Future<void> saveFarmerProfile(Farmer farmer) async {
+  Future<void> saveFarmerProfile(Farmer farmer, {String? email}) async {
     try {
-      await _firestore.saveFarmerProfile(farmer);
+      await _firestore.saveFarmerProfile(farmer, email: email);
     } catch (e) {
       debugPrint("DatabaseService saveFarmerProfile error: $e");
       rethrow;

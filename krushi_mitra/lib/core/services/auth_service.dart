@@ -84,7 +84,10 @@ class AuthService {
   // Google Sign-In via Firebase
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: '1024024620084-dt2r0i0a4uf4bv54odq1otde67c8bagj.apps.googleusercontent.com',
+      );
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         debugPrint("Firebase Google Auth: User cancelled sign-in");
         return null;

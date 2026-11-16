@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "1024024620084-4q26efvoofov4ulssi6kded5vokgor4k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.krushi_Mitra",
+            "certificate_hash": "7f784b145d1933b2b7b9ece3eff12a9df87d9a17"
+          }
+        },
+        {
           "client_id": "1024024620084-dt2r0i0a4uf4bv54odq1otde67c8bagj.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
+import '../../../core/providers/database_provider.dart';
 import '../../../core/services/firestore_service.dart';
 import '../../../data/models/farmer_model.dart';
 import '../../home/screens/main_screen.dart';
@@ -181,7 +184,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
           cleanPassword,
         );
         if (cred.user != null) {
-          await ref.read(currentUserProvider.notifier).fetchProfile(cred.user!.uid);
+          final uid = cred.user!.uid;
+
+          // 1. Fetch or resolve profile for this UID
+          Farmer? profile = await ref.read(databaseServiceProvider).getFarmerProfile(uid);
+
+          // 2. If profile is missing or default, try looking up by email in local storage
+          if (profile == null || profile.name == 'Kisan Mitra') {
+            final prefs = await SharedPreferences.getInstance();
+            final emailStr = prefs.getString('local_farmer_profile_$cleanEmail');
+            if (emailStr != null && emailStr.isNotEmpty) {
+              final data = json.decode(emailStr);
+              if (data is Map<String, dynamic>) {
+                data['id'] = uid;
+                profile = Farmer.fromJson(data);
+                await FirestoreService().saveFarmerProfile(profile, email: cleanEmail);
+              }
+            }
+          }
+
+          // 3. If still missing, check Firebase Auth displayName
+          if (profile == null || profile.name == 'Kisan Mitra') {
+            final displayName = cred.user!.displayName;
+            if (displayName != null && displayName.trim().isNotEmpty) {
+              final base = profile ?? ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
+              profile = base.copyWith(
+                name: displayName.trim(),
+              );
+              await FirestoreService().saveFarmerProfile(profile, email: cleanEmail);
+            }
+          }
+
+          if (profile != null) {
+            ref.read(currentUserProvider.notifier).setProfile(profile);
+          } else {
+            await ref.read(currentUserProvider.notifier).fetchProfile(uid);
+          }
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: const Text('Signed in successfully!'),
@@ -220,11 +259,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
             irrigationSource: _selectedIrrigation,
           );
 
-          // 1. Instantly set in Riverpod state so UI reflects it immediately
+          // 1. Save profile to disk and memory FIRST
+          await FirestoreService().saveFarmerProfile(farmer, email: cleanEmail);
           ref.read(currentUserProvider.notifier).setProfile(farmer);
-
-          // 2. Persist profile locally and to Firestore
-          await FirestoreService().saveFarmerProfile(farmer);
           await ref.read(appLanguageProvider.notifier).setLanguage(_selectedLanguage, userId: uid);
 
           if (mounted) {
@@ -260,16 +297,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     setState(() => _isLoading = true);
     try {
       final cred = await ref.read(authServiceProvider).signInWithGoogle();
-      if (cred != null) {
-        if (cred.user != null) {
-          await ref.read(currentUserProvider.notifier).fetchProfile(cred.user!.uid);
+      if (cred != null && cred.user != null) {
+        final u = cred.user!;
+        final uid = u.uid;
+        final cleanEmail = (u.email ?? '').trim().toLowerCase();
+
+        // 1. Fetch or resolve profile for this Google user
+        Farmer? profile = await ref.read(databaseServiceProvider).getFarmerProfile(uid);
+
+        // 2. Check local profile by email
+        if ((profile == null || profile.name == 'Kisan Mitra') && cleanEmail.isNotEmpty) {
+          final prefs = await SharedPreferences.getInstance();
+          final emailStr = prefs.getString('local_farmer_profile_$cleanEmail');
+          if (emailStr != null && emailStr.isNotEmpty) {
+            final data = json.decode(emailStr);
+            if (data is Map<String, dynamic>) {
+              data['id'] = uid;
+              profile = Farmer.fromJson(data);
+              await FirestoreService().saveFarmerProfile(profile, email: cleanEmail);
+            }
+          }
+        }
+
+        // 3. Fallback to Google identity (Name & Photo)
+        if (profile == null || profile.name == 'Kisan Mitra') {
+          final googleName = (u.displayName != null && u.displayName!.trim().isNotEmpty)
+              ? u.displayName!.trim()
+              : (cleanEmail.isNotEmpty ? cleanEmail.split('@')[0] : 'Farmer');
+          final base = profile ?? ref.read(databaseServiceProvider).getLocalFallbackProfile(uid);
+          profile = base.copyWith(
+            name: googleName,
+            email: cleanEmail.isNotEmpty ? cleanEmail : null,
+            photoUrl: u.photoURL,
+          );
+          await FirestoreService().saveFarmerProfile(profile, email: cleanEmail);
+        }
+
+        ref.read(currentUserProvider.notifier).setProfile(profile);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('🎉 Welcome ${profile.name}! Signed in with Google.'),
+            backgroundColor: AppColors.primaryEmerald,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ));
         }
         _navigateToHome();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_friendlyError(e.toString())),
+          content: Row(children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(_friendlyError(e.toString()), style: GoogleFonts.plusJakartaSans(fontSize: 13))),
+          ]),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -332,6 +415,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
 
   String _friendlyError(String error) {
     final lower = error.toLowerCase();
+    if (lower.contains('10:') || lower.contains('api_exception: 10') || lower.contains('statuscode=10') || lower.contains('developer_error')) {
+      return 'Google Sign-In configuration error: Please make sure SHA-1 fingerprint is registered in Google Cloud / Firebase console.';
+    }
+    if (lower.contains('sign_in_canceled') || lower.contains('cancelled') || lower.contains('user canceled')) {
+      return 'Google Sign-In was cancelled.';
+    }
     if (lower.contains('invalid-credential') || lower.contains('wrong-password') || lower.contains('user-not-found')) {
       return 'Incorrect email or password. Please try again.';
     }
@@ -347,7 +436,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     if (lower.contains('network') || lower.contains('socketexception') || lower.contains('failed host lookup')) {
       return 'Network connection issue. Please check your internet connection.';
     }
-    return error.replaceAll('Exception:', '').replaceAll('firebase_auth/', '').trim();
+    return error.replaceAll('Exception:', '').replaceAll('firebase_auth/', '').replaceAll('PlatformException(', '').replaceAll(')', '').trim();
   }
 
   int get _passwordStrength {
